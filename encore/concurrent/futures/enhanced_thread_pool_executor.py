@@ -19,10 +19,9 @@ changes:
     * 'map' works without iterating (bugs.python.org/issue11777).
     * Workers do not unnecessarily retain references to work items
       (bugs.python.org/issue16284).
-    * Workers do not use polling: http://bugs.python.org/issue11635
 
 The implementation is largely copied to avoid reliance on undocumented, private
-parts of the code. For example, '_threads_queues' is needed to properly
+parts of the code. For example, '_thread_references' is needed to properly
 manage threads in the ThreadPoolExecutor, but this is not guaranteed to exist
 in future implementations of concurrent.futures.thread.
 
@@ -53,18 +52,30 @@ from concurrent.futures import _base
 # workers to exit when their work queues are empty and then waits until the
 # threads finish.
 
-_threads_queues = weakref.WeakKeyDictionary()
+_thread_references = set()
 _shutdown = False
 
 
 def _python_exit():
     global _shutdown
     _shutdown = True
-    items = list(_threads_queues.items())
-    for t, q in items:
-        q.put(None)
-    for t, q in items:
-        t.join()
+    for thread_reference in set(_thread_references):
+        thread = thread_reference()
+        if thread is not None:
+            thread.join()
+
+
+def _remove_dead_thread_references():
+    """Remove inactive threads from _thread_references.
+
+    Should be called periodically to prevent memory leaks in scenarios such as:
+    >>> while True:
+    ...    t = ThreadPoolExecutor(max_workers=5)
+    ...    t.map(int, ['1', '2', '3', '4', '5'])
+    """
+    for thread_reference in set(_thread_references):
+        if thread_reference() is None:
+            _thread_references.discard(thread_reference)
 
 atexit.register(_python_exit)
 
@@ -100,22 +111,21 @@ def _worker(executor_reference, work_queue, initialize=None,
 
     try:
         while True:
-            work_item = work_queue.get(block=True)
-            if work_item is not None:
+            try:
+                work_item = work_queue.get(block=True, timeout=0.1)
+            except queue.Empty:
+                executor = executor_reference()
+                # Exit if:
+                #   - The interpreter is shutting down OR
+                #   - The executor that owns the worker has been collected OR
+                #   - The executor that owns the worker has been shutdown.
+                if _shutdown or executor is None or executor._shutdown:
+                    break
+                del executor
+            else:
                 work_item.run()
                 # Delete references to object. See issue16284
                 del work_item
-                continue
-            executor = executor_reference()
-            # Exit if:
-            #   - The interpreter is shutting down OR
-            #   - The executor that owns the worker has been collected OR
-            #   - The executor that owns the worker has been shutdown.
-            if _shutdown or executor is None or executor._shutdown:
-                # Notify other workers.
-                work_queue.put(None)
-                return
-            del executor
     except BaseException:
         _base.LOGGER.critical('Exception in worker', exc_info=True)
     finally:
@@ -127,7 +137,7 @@ def _worker(executor_reference, work_queue, initialize=None,
                         exc_info=True)
 
 
-class EnhancedThreadPoolExecutor(_base.Executor):
+class _EnhancedThreadPoolExecutor(_base.Executor):
     def __init__(self, max_workers, initializer=None, uninitializer=None,
                  name=None):
         """Initializes a new EnhancedThreadPoolExecutor instance.
@@ -147,6 +157,8 @@ class EnhancedThreadPoolExecutor(_base.Executor):
                 class name will be used.
 
         """
+        _remove_dead_thread_references()
+
         self._max_workers = max_workers
         self._work_queue = queue.Queue()
         self._threads = set()
@@ -173,28 +185,21 @@ class EnhancedThreadPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
-        # When the executor gets lost, the weakref callback will wake up
-        # the worker threads.
-        def weakref_cb(_, q=self._work_queue):
-            q.put(None)
-
         if len(self._threads) < self._max_workers:
             thread_name = "{0}Worker-{1}".format(self.name,
                                                  next(self._thread_counter))
             t = threading.Thread(target=_worker, name=thread_name,
-                                 args=(weakref.ref(self, weakref_cb),
-                                       self._work_queue,
+                                 args=(weakref.ref(self), self._work_queue,
                                        self._initializer,
                                        self._uninitializer))
             t.daemon = True
             t.start()
             self._threads.add(t)
-            _threads_queues[t] = self._work_queue
+            _thread_references.add(weakref.ref(t))
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:
             self._shutdown = True
-            self._work_queue.put(None)
         if wait:
             for t in self._threads:
                 t.join()
@@ -237,3 +242,33 @@ class EnhancedThreadPoolExecutor(_base.Executor):
                 for future in fs:
                     future.cancel()
         return result_iterator()
+
+
+import cProfile
+
+
+class EnhancedThreadPoolExecutor(_EnhancedThreadPoolExecutor):
+
+    def __init__(self, max_workers, initializer=None, uninitializer=None,
+                 name=None):
+        self._custom_initializer = initializer
+        self._custom_uninitializer = uninitializer
+        self._profilers = {}
+        super(EnhancedThreadPoolExecutor, self).__init__(
+            max_workers, self._initializer, self._uninitializer,
+            name)
+
+    def _initializer(self):
+        if self._custom_initializer is not None:
+            self._custom_initializer()
+        thread = threading.current_thread()
+        self._profilers[thread] = profiler = cProfile.Profile()
+        profiler.enable()
+
+    def _uninitializer(self):
+        thread = threading.current_thread()
+        profiler = self._profilers.pop(thread)
+        profiler.disable()
+        profiler.dump_stats('{}-{}.pstats'.format(thread.name, thread.ident))
+        if self._custom_uninitializer is not None:
+            self._custom_uninitializer()
