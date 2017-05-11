@@ -33,8 +33,8 @@ class SerializingAsynchronizer(ABCWorkScheduler):
     """
 
     def __init__(self, executor, name=None, callback=None):
-        super(SerializingAsynchronizer, self).__init__(
-            executor, name, callback)
+        super(SerializingAsynchronizer, self).__init__(executor, name,
+                                                       callback)
         # Ordered dictionary containing tuples (operation, args, kwargs)
         # representing pending operations.  The items are keyed by the
         # operation. Operations are executed in the order they were

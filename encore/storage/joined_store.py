@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Joined Store
 ============
@@ -14,6 +13,7 @@ Joined Store
 
 from .abstract_store import AbstractAuthorizingStore
 from .utils import DummyTransactionContext
+
 
 class JoinedStore(AbstractAuthorizingStore):
     """ A key-value store that joins together several other Key-Value Stores
@@ -35,11 +35,11 @@ class JoinedStore(AbstractAuthorizingStore):
         The stores that are joined together by this store.
         
     """
+
     def __init__(self, stores):
         super(JoinedStore, self).__init__()
         self.stores = stores
 
-                
     def connect(self, credentials=None):
         """ Connect to the key-value store, optionally with authentication
         
@@ -60,7 +60,6 @@ class JoinedStore(AbstractAuthorizingStore):
                 store.connect(credentials)
         self._connected = True
 
-        
     def disconnect(self):
         """ Disconnect from the key-value store
         
@@ -70,7 +69,6 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         self._connected = False
         self.stores = []
-
 
     def is_connected(self):
         """ Whether or not the store is currently connected
@@ -83,7 +81,6 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         return self._connected
 
-    
     def info(self):
         """ Get information about the key-value store
         
@@ -92,19 +89,15 @@ class JoinedStore(AbstractAuthorizingStore):
         metadata : dict
             A dictionary of metadata giving information about the key-value store.
         """
-        return {
-            'readonly': False,
-        }
-    
+        return {'readonly': False, }
+
     def user_tag(self):
         return self.stores[0].user_tag()
 
-        
     ##########################################################################
     # Basic Create/Read/Update/Delete Methods
     ##########################################################################
-    
-    
+
     def get(self, key):
         """ Retrieve a stream of data and metdata from a given key in the key-value store.
         
@@ -129,13 +122,11 @@ class JoinedStore(AbstractAuthorizingStore):
 
         """
         for store in self.stores:
-            if store.exists(key): 
+            if store.exists(key):
                 return store.get(key)
         else:
             raise KeyError(key)
 
-
-    
     def set(self, key, value, buffer_size=1048576):
         """ Store a stream of data into a given key in the key-value store.
         
@@ -177,8 +168,6 @@ class JoinedStore(AbstractAuthorizingStore):
             self.set_data(key, data, buffer_size)
             self.set_metadata(key, metadata)
 
-
-    
     def delete(self, key):
         """ Delete a key from the repsository.
         
@@ -205,7 +194,6 @@ class JoinedStore(AbstractAuthorizingStore):
         else:
             raise KeyError(key)
 
-    
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
         
@@ -233,7 +221,6 @@ class JoinedStore(AbstractAuthorizingStore):
         else:
             raise KeyError(key)
 
-    
     def get_metadata(self, key, select=None):
         """ Retrieve the metadata for a given key in the key-value store.
         
@@ -265,7 +252,6 @@ class JoinedStore(AbstractAuthorizingStore):
                 return store.get_metadata(key, select)
         else:
             raise KeyError(key)
-            
 
     def get_permissions(self, key):
         """ Return the set of permissions the user has
@@ -297,8 +283,7 @@ class JoinedStore(AbstractAuthorizingStore):
                 return store.get_permissions(key)
         else:
             raise KeyError(key)
-        
-    
+
     def set_data(self, key, data, buffer_size=1048576):
         """ Replace the data for a given key in the key-value store.
         
@@ -331,18 +316,17 @@ class JoinedStore(AbstractAuthorizingStore):
             emitted with the key & metadata
 
         """
-     
+
         # Tries to set data on first store that will allow for it (eg spaces).
         for store in self.stores:
             try:
                 store.set_data(key, data, buffer_size)
             except KeyError:
-                pass 
+                pass
             else:
-                return 
+                return
         raise KeyError(key)
 
-    
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
         
@@ -366,11 +350,10 @@ class JoinedStore(AbstractAuthorizingStore):
 
         """
         for store in self.stores:
-            if store.exists(key):                
+            if store.exists(key):
                 store.set_metadata(key, metadata)
                 return
         raise KeyError(key)
-
 
     def set_permissions(self, key, permissions):
         """ Set the permissions on a key the user owns
@@ -397,12 +380,11 @@ class JoinedStore(AbstractAuthorizingStore):
         
         """
         for store in self.stores:
-            if store.exists(key):                
+            if store.exists(key):
                 store.set_permissions(key, permissions)
-                return 
+                return
         raise KeyError(key)
-            
-            
+
     def update_metadata(self, key, metadata):
         """ Update the metadata for a given key in the key-value store.
         
@@ -431,8 +413,7 @@ class JoinedStore(AbstractAuthorizingStore):
             self.set_metadata(key, current_metadata)
         else:
             raise KeyError(key)
-            
-    
+
     def update_permissions(self, key, permissions):
         """ Add permissions on a key the user owns
         
@@ -462,12 +443,11 @@ class JoinedStore(AbstractAuthorizingStore):
         """
 
         for store in self.stores:
-            if store.exists(key):                       
+            if store.exists(key):
                 store.update_permissions(key, permissions)
                 return
         raise KeyError(key)
 
-    
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
         
@@ -489,11 +469,10 @@ class JoinedStore(AbstractAuthorizingStore):
         else:
             return False
 
-        
     ##########################################################################
     # Multiple-key Methods
     ##########################################################################
-    
+
     def multiset(self, keys, values, buffer_size=1048576):
         """ Set the data and metadata for a collection of keys.
         
@@ -534,8 +513,7 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         if self.stores:
             self.stores[0].multiset(keys, values, buffer_size)
-   
-    
+
     def multiset_data(self, keys, datas, buffer_size=1048576):
         """ Set the data for a collection of keys.
         
@@ -576,8 +554,7 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         if self.stores:
             self.stores[0].multiset_data(keys, datas)
-   
-    
+
     def multiset_metadata(self, keys, metadatas):
         """ Set the metadata for a collection of keys.
         
@@ -605,8 +582,7 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         if self.stores:
             self.stores[0].multiset_metadata(keys, metadatas)
-   
-    
+
     def multiupdate_metadata(self, keys, metadatas):
         """ Update the metadata for a collection of keys.
         
@@ -634,12 +610,11 @@ class JoinedStore(AbstractAuthorizingStore):
         """
         if self.stores:
             self.stores[0].multiupdate_metadata(keys, metadatas)
-    
-   
-    ##########################################################################
-    # Transaction Methods
-    ##########################################################################
-    
+
+##########################################################################
+# Transaction Methods
+##########################################################################
+
     def transaction(self, notes):
         """ Provide a transaction context manager
         
@@ -695,12 +670,11 @@ class JoinedStore(AbstractAuthorizingStore):
 
         """
         return DummyTransactionContext(self)
-        
+
     ##########################################################################
     # Querying Methods
     ##########################################################################
-        
-    
+
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
         
@@ -731,7 +705,6 @@ class JoinedStore(AbstractAuthorizingStore):
                 if all(not s.exists(key) for s in self.stores[:i]):
                     yield key, metadata
 
-    
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
         
@@ -760,10 +733,8 @@ class JoinedStore(AbstractAuthorizingStore):
                 if not any(s.exists(key) for s in self.stores[:i]):
                     yield key
 
-    
     ##########################################################################
     # Utility Methods
     ##########################################################################
 
     # superclass methods are fine
-    

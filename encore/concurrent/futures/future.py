@@ -4,7 +4,6 @@ from concurrent.futures import _base
 
 
 class Future(_base.Future):
-
     def __init__(self):
         super(Future, self).__init__()
         self._traceback_formatted = None

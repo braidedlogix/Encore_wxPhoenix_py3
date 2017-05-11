@@ -19,9 +19,7 @@ from ..utils import add_context_manager_support
 
 def create_file_like_data(data_bytes):
     # The store are supposed to received file-like data streams
-    return add_context_manager_support(
-        BytesIO(data_bytes)
-    )
+    return add_context_manager_support(BytesIO(data_bytes))
 
 
 @contextmanager
@@ -38,7 +36,7 @@ class StoreReadTestMixin(object):
     resolution = 'arbitrary'
 
     def utils_large(self):
-        self.store.from_bytes('test3', 'test4'*10000000)
+        self.store.from_bytes('test3', 'test4' * 10000000)
 
     def test_get(self):
         value = self.store.get('test1')
@@ -50,7 +48,11 @@ class StoreReadTestMixin(object):
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         })
         self.assertEqual(value.size, 6)
 
@@ -81,7 +83,11 @@ class StoreReadTestMixin(object):
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         })
 
     def test_get_metadata_copies(self):
@@ -99,7 +105,8 @@ class StoreReadTestMixin(object):
         })
 
     def test_get_metadata_select_missing(self):
-        metadata = self.store.get_metadata('test1', ['a_str', 'an_int', 'missing'])
+        metadata = self.store.get_metadata('test1',
+                                           ['a_str', 'an_int', 'missing'])
         self.assertEqual(metadata, {
             'a_str': 'test3',
             'an_int': 1,
@@ -110,7 +117,7 @@ class StoreReadTestMixin(object):
         self.assertEqual(self.store.exists('test2'), False)
 
     def test_multiget(self):
-        result = self.store.multiget('key'+str(i) for i in range(10))
+        result = self.store.multiget('key' + str(i) for i in range(10))
         for i, value in enumerate(result):
             with value.data as data:
                 self.assertEqual(data.read(), b'value%i' % i)
@@ -121,13 +128,14 @@ class StoreReadTestMixin(object):
             self.assertEqual(expected, value.metadata)
 
     def test_multiget_data(self):
-        result = self.store.multiget_data('key'+str(i) for i in range(10))
+        result = self.store.multiget_data('key' + str(i) for i in range(10))
         for i, data in enumerate(result):
             with data:
                 self.assertEqual(data.read(), b'value%i' % i)
 
     def test_multiget_metadata(self):
-        result = self.store.multiget_metadata('key'+str(i) for i in range(10))
+        result = self.store.multiget_metadata('key' + str(i)
+                                              for i in range(10))
         for i, metadata in enumerate(result):
             expected = {'query_test1': 'value', 'query_test2': i}
             if i % 2 == 0:
@@ -135,7 +143,8 @@ class StoreReadTestMixin(object):
             self.assertEqual(expected, metadata)
 
     def test_multiget_metadata_select(self):
-        result = self.store.multiget_metadata(('key'+str(i) for i in range(10)),
+        result = self.store.multiget_metadata(
+            ('key' + str(i) for i in range(10)),
             select=['query_test1', 'optional'])
         for i, metadata in enumerate(result):
             expected = {'query_test1': 'value'}
@@ -145,9 +154,18 @@ class StoreReadTestMixin(object):
 
     def test_query(self):
         result = sorted(self.store.query(a_str='test3'))
-        self.assertEqual(result, [('test1', {'a_str': 'test3', 'an_int': 1,
-            'a_float': 2.0, 'a_bool': True, 'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}})])
+        self.assertEqual(result, [('test1', {
+            'a_str': 'test3',
+            'an_int': 1,
+            'a_float': 2.0,
+            'a_bool': True,
+            'a_list': ['one', 'two', 'three'],
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        })])
 
     def test_query_copy(self):
         """ Metadata returned from separate query()s should not be same object"""
@@ -158,8 +176,10 @@ class StoreReadTestMixin(object):
 
     def test_query1(self):
         result = sorted(self.store.query(query_test1='value'))
-        expected = sorted(('key%d' % i, {'query_test1': 'value',
-            'query_test2': i}) for i in range(10))
+        expected = sorted(('key%d' % i, {
+            'query_test1': 'value',
+            'query_test2': i
+        }) for i in range(10))
         for i, (key, metadata) in enumerate(expected):
             if i % 2 == 0:
                 metadata['optional'] = True
@@ -182,8 +202,12 @@ class StoreReadTestMixin(object):
         self.assertEqual(result, [('test1', {'a_str': 'test3', 'an_int': 1})])
 
     def test_query_select_missing(self):
-        result = sorted(self.store.query(['query_test1', 'optional'], query_test1='value'))
-        expected = sorted(('key%d' % i, {'query_test1': 'value'}) for i in range(10))
+        result = sorted(
+            self.store.query(
+                ['query_test1', 'optional'], query_test1='value'))
+        expected = sorted(('key%d' % i, {
+            'query_test1': 'value'
+        }) for i in range(10))
         for i, (key, metadata) in enumerate(expected):
             if i % 2 == 0:
                 metadata['optional'] = True
@@ -229,7 +253,7 @@ class StoreReadTestMixin(object):
             filepath = os.path.join(directory, 'test')
             self.store.to_file('test3', filepath)
             written = open(filepath).read()
-            self.assertEqual(written, 'test4'*10000000)
+            self.assertEqual(written, 'test4' * 10000000)
 
 
 class StoreWriteTestMixin(object):
@@ -245,7 +269,11 @@ class StoreWriteTestMixin(object):
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         test_start = time.time()
         if self.resolution == 'second':
@@ -253,7 +281,7 @@ class StoreWriteTestMixin(object):
         self.store.set('test3', (data, metadata))
         test_end = time.time()
         if self.resolution == 'second':
-            test_end = int(test_end)+1
+            test_end = int(test_end) + 1
         self.assertEqual(self.store.to_bytes('test3'), b'test4')
         self.assertEqual(self.store.get_metadata('test3'), metadata)
 
@@ -276,7 +304,11 @@ class StoreWriteTestMixin(object):
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         self.store.set('test3', (data, metadata))
         metadata['extra_key'] = 'extra_value'
@@ -288,17 +320,21 @@ class StoreWriteTestMixin(object):
         Subclasses should call this via super(), then validate that things
         were stored correctly.
         """
-        data = create_file_like_data(b'test4'*10000000) # 50 MB of data
+        data = create_file_like_data(b'test4' * 10000000)  # 50 MB of data
         metadata = {
             'a_str': 'test5',
             'an_int': 2,
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         self.store.set('test3', (data, metadata))
-        self.assertEqual(self.store.to_bytes('test3'), b'test4'*10000000)
+        self.assertEqual(self.store.to_bytes('test3'), b'test4' * 10000000)
         self.assertEqual(self.store.get_metadata('test3'), metadata)
 
     def test_set_buffer(self):
@@ -307,17 +343,21 @@ class StoreWriteTestMixin(object):
         Subclasses should call this via super(), then validate that things
         were stored correctly.
         """
-        data = create_file_like_data(b'test4'*8000)
+        data = create_file_like_data(b'test4' * 8000)
         metadata = {
             'a_str': 'test5',
             'an_int': 2,
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         self.store.set('test3', (data, metadata), 8000)
-        self.assertEqual(self.store.to_bytes('test3'), b'test4'*8000)
+        self.assertEqual(self.store.to_bytes('test3'), b'test4' * 8000)
         self.assertEqual(self.store.get_metadata('test3'), metadata)
 
     def test_set_data(self):
@@ -328,7 +368,7 @@ class StoreWriteTestMixin(object):
         self.store.set_data('test1', data)
         test_end = time.time()
         if self.resolution == 'second':
-            test_end = int(test_end)+1
+            test_end = int(test_end) + 1
         self.assertEqual(self.store.to_bytes('test1'), b'test4')
         value = self.store.get('test1')
         self.assertGreaterEqual(value.modified, test_start)
@@ -342,7 +382,7 @@ class StoreWriteTestMixin(object):
         self.store.set_data('test3', data)
         test_end = time.time()
         if self.resolution == 'second':
-            test_end = int(test_end)+1
+            test_end = int(test_end) + 1
         self.assertEqual(self.store.to_bytes('test3'), b'test4')
         value = self.store.get('test3')
         self.assertGreaterEqual(value.modified, test_start)
@@ -354,9 +394,9 @@ class StoreWriteTestMixin(object):
         Subclasses should call this via super(), then validate that things
         were stored correctly.
         """
-        data = create_file_like_data(b'test4'*10000000) # 50 MB of data
+        data = create_file_like_data(b'test4' * 10000000)  # 50 MB of data
         self.store.set_data('test3', data)
-        self.assertEqual(self.store.to_bytes('test3'), b'test4'*10000000)
+        self.assertEqual(self.store.to_bytes('test3'), b'test4' * 10000000)
 
     def test_set_data_buffer(self):
         """ Test that set works with a different-sized buffer
@@ -364,9 +404,9 @@ class StoreWriteTestMixin(object):
         Subclasses should call this via super(), then validate that things
         were stored correctly.
         """
-        data = create_file_like_data(b'test4'*8000)
+        data = create_file_like_data(b'test4' * 8000)
         self.store.set_data('test1', data)
-        self.assertEqual(self.store.to_bytes('test1'), b'test4'*8000)
+        self.assertEqual(self.store.to_bytes('test1'), b'test4' * 8000)
 
     def test_set_metadata(self):
         metadata = {
@@ -375,7 +415,11 @@ class StoreWriteTestMixin(object):
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         test_start = time.time()
         if self.resolution == 'second':
@@ -383,7 +427,7 @@ class StoreWriteTestMixin(object):
         self.store.set_metadata('test1', metadata)
         test_end = time.time()
         if self.resolution == 'second':
-            test_end = int(test_end)+1
+            test_end = int(test_end) + 1
         self.assertEqual(self.store.get_metadata('test1'), metadata)
         value = self.store.get('test1')
         self.assertGreaterEqual(value.modified, test_start)
@@ -401,7 +445,11 @@ class StoreWriteTestMixin(object):
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         self.store.set_metadata('test1', metadata)
         metadata['extra_key'] = 'extra_value'
@@ -419,7 +467,11 @@ class StoreWriteTestMixin(object):
             'a_float_1': 3.0,
             'a_bool_1': True,
             'a_list_1': ['one', 'two', 'three'],
-            'a_dict_1': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict_1': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         self.store.update_metadata('test1', metadata)
 
@@ -433,11 +485,11 @@ class StoreWriteTestMixin(object):
         self.assertFalse(self.store.exists('test1'))
 
     def test_multiset(self):
-        keys = ['set_key'+str(i) for i in range(10)]
+        keys = ['set_key' + str(i) for i in range(10)]
         values = [b'set_value%i' % i for i in range(10)]
         datas = [create_file_like_data(value) for value in values]
         metadatas = [{'meta1': i, 'meta2': True} for i in range(10)]
-        self.store.multiset(keys, zip(datas, metadatas))
+        self.store.multiset(keys, list(zip(datas, metadatas)))
         for i in range(10):
             self.assertTrue(self.store.exists(keys[i]))
             with self.store.get_data(keys[i]) as data_fh:
@@ -445,11 +497,11 @@ class StoreWriteTestMixin(object):
             self.assertEqual(self.store.get_metadata(keys[i]), metadatas[i])
 
     def test_multiset_overwrite(self):
-        keys = ['existing_key'+str(i) for i in range(10)]
+        keys = ['existing_key' + str(i) for i in range(10)]
         values = [b'set_value%i' % i for i in range(10)]
         datas = [create_file_like_data(value) for value in values]
         metadatas = [{'meta1': i, 'meta2': True} for i in range(10)]
-        self.store.multiset(keys, zip(datas, metadatas))
+        self.store.multiset(keys, list(zip(datas, metadatas)))
         for i in range(10):
             self.assertTrue(self.store.exists(keys[i]))
             with self.store.get_data(keys[i]) as data_fh:
@@ -457,7 +509,7 @@ class StoreWriteTestMixin(object):
             self.assertEqual(self.store.get_metadata(keys[i]), metadatas[i])
 
     def test_multiset_data(self):
-        keys = ['existing_key'+str(i) for i in range(10)]
+        keys = ['existing_key' + str(i) for i in range(10)]
         values = [b'set_value%i' % i for i in range(10)]
         datas = [create_file_like_data(value) for value in values]
         self.store.multiset_data(keys, datas)
@@ -468,16 +520,16 @@ class StoreWriteTestMixin(object):
                 self.assertEqual(data_fh.read(), values[i])
 
     def test_multiset_metadata(self):
-        keys = ['existing_key'+str(i) for i in range(10)]
+        keys = ['existing_key' + str(i) for i in range(10)]
         metadatas = [{'meta1': i, 'meta2': True} for i in range(10)]
         self.store.multiset_metadata(keys, metadatas)
-        values = ['existing_value'+str(i) for i in range(10)]
+        values = ['existing_value' + str(i) for i in range(10)]
         for i in range(10):
             self.assertTrue(self.store.exists(keys[i]))
             self.assertEqual(self.store.get_metadata(keys[i]), metadatas[i])
 
     def test_multiupdate_metadata(self):
-        keys = ['existing_key'+str(i) for i in range(10)]
+        keys = ['existing_key' + str(i) for i in range(10)]
         metadatas = [{'meta1': i, 'meta2': True} for i in range(10)]
         self.store.multiset_metadata(keys, metadatas)
         for i in range(10):
@@ -508,9 +560,9 @@ class StoreWriteTestMixin(object):
         with temp_dir() as directory:
             filepath = os.path.join(directory, 'test')
             with open(filepath, 'wb') as fp:
-                fp.write(b'test4'*10000000)
+                fp.write(b'test4' * 10000000)
             self.store.from_file('test3', filepath)
-        self.assertEqual(self.store.to_bytes('test3'), b'test4'*10000000)
+        self.assertEqual(self.store.to_bytes('test3'), b'test4' * 10000000)
 
     def test_from_bytes(self):
         self.store.from_bytes('test3', b'test4')

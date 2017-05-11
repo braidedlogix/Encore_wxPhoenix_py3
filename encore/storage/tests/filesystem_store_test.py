@@ -23,18 +23,18 @@ class BaseFileSystemStoreTestCase(TestCase):
         rmtree(self.path)
 
     def utils_large(self):
-        self._write_data('test3', b'test4'*10000000)
+        self._write_data('test3', b'test4' * 10000000)
         self._write_metadata('test3', {})
-            
+
     def _write_data(self, filename, data):
         with open(os.path.join(self.path, filename + '.data'), 'wb') as fp:
             fp.write(data)
-    
+
     def _write_metadata(self, filename, metadata):
         with open(os.path.join(self.path, filename + '.metadata'), 'wb') as fp:
             metadata_str = json.dumps(metadata)
             fp.write(metadata_str.encode('utf-8'))
-    
+
 
 class FileSystemStoreReadTest(BaseFileSystemStoreTestCase, StoreReadTestMixin):
     def setUp(self):
@@ -65,27 +65,30 @@ class FileSystemStoreReadTest(BaseFileSystemStoreTestCase, StoreReadTestMixin):
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         })
-        
+
         for i in range(10):
-            self._write_data('key%d'%i, b'value%d' % i)
-            metadata = {'query_test1': 'value',
-                'query_test2': i}
+            self._write_data('key%d' % i, b'value%d' % i)
+            metadata = {'query_test1': 'value', 'query_test2': i}
             if i % 2 == 0:
                 metadata['optional'] = True
-            self._write_metadata('key%d'%i, metadata)
+            self._write_metadata('key%d' % i, metadata)
 
         self.store = FileSystemStore(self.path)
         self.store.connect()
 
     def utils_large(self):
-        self._write_data('test3', b'test4'*10000000)
+        self._write_data('test3', b'test4' * 10000000)
         self._write_metadata('test3', {})
 
 
-class FileSystemStoreWriteTest(BaseFileSystemStoreTestCase, StoreWriteTestMixin):
-
+class FileSystemStoreWriteTest(BaseFileSystemStoreTestCase,
+                               StoreWriteTestMixin):
     def setUp(self):
         """ Set up a data store for the test case
 
@@ -113,11 +116,15 @@ class FileSystemStoreWriteTest(BaseFileSystemStoreTestCase, StoreWriteTestMixin)
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         })
 
         for i in range(10):
-            key = 'existing_key'+str(i)
+            key = 'existing_key' + str(i)
             data = b'existing_value%i' % i
             metadata = {'meta': True, 'meta1': -i}
             self._write_data(key, data)
@@ -125,4 +132,3 @@ class FileSystemStoreWriteTest(BaseFileSystemStoreTestCase, StoreWriteTestMixin)
 
         self.store = FileSystemStore(self.path)
         self.store.connect()
-

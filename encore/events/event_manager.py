@@ -40,6 +40,7 @@ class LoggingTracer(object):
     event_manager.set_trace(LoggingTracer())
 
     """
+
     def __init__(self, logger=logger, level=logging.INFO):
         self._level = level
         self._logger = logger
@@ -49,6 +50,7 @@ class LoggingTracer(object):
                          'event_log: %s, function: %s,\nargs=%s,\nkwds=%s',
                          name, func, args, kwds)
 
+
 ###############################################################################
 # Notifier classes for callables: lightweight weakref substitutes.
 ###############################################################################
@@ -56,6 +58,7 @@ class CallableNotifier(object):
     """ Notifier for general callables, whose strong reference is stored.
     """
     __slots__ = ['func']
+
     def __init__(self, func, notify=None, args=()):
         self.func = func
 
@@ -64,15 +67,17 @@ class CallableNotifier(object):
         """
         return self.func
 
+
 class MethodNotifier(object):
     """ Notifiers for methods, for which weak refs of object is stored.
     """
     __slots__ = ['func', 'cls', 'obj', '_notify', '_args']
+
     def __init__(self, meth, notify=None, args=()):
         self.func = meth.__func__
 
         if six.PY2:
-            self.cls = meth.im_class
+            self.cls = meth.__self__.__class__
         else:
             self.cls = meth.__self__.__class__
 
@@ -107,12 +112,14 @@ class MethodNotifier(object):
 
             return six.create_bound_method(self.func, objc)
 
+
 ###############################################################################
 # `EventInfo` Private Class.
 ###############################################################################
 class EventInfo(object):
     """ A class which manages handling of a single event.
     """
+
     def __init__(self, cls):
         """ Constructor.
 
@@ -122,14 +129,13 @@ class EventInfo(object):
             Class of the event.
         """
         self.cls = cls
-        self._priority_list = [] # sorted priority list
+        self._priority_list = []  # sorted priority list
         self._priority_info = {}
         self._listener_filters = {}
-        self._filter_keys = set() # to precompute filters on event emit
+        self._filter_keys = set()  # to precompute filters on event emit
         self._disable = False
 
         self._priority_list_lock = threading.Lock()
-
 
     def connect(self, func, filter=None, priority=0, count=0):
         """ Add a listener for the event.
@@ -222,10 +228,11 @@ class EventInfo(object):
             obj = func.__self__
             if obj is None:
                 # Unbound method
-                return weakref.ref(func.__func__),weakref.ref(func.__self__.__class__)
+                return weakref.ref(func.__func__), weakref.ref(
+                    func.__self__.__class__)
             else:
                 # Bound method.
-                return weakref.ref(func.__func__),weakref.ref(func.__self__)
+                return weakref.ref(func.__func__), weakref.ref(func.__self__)
         else:
             return func
 
@@ -237,7 +244,7 @@ class EventInfo(object):
             if notify is None:
                 args = ()
             else:
-                args = (self.get_id(func),)
+                args = (self.get_id(func), )
             return MethodNotifier(func, notify, args)
         else:
             return CallableNotifier(func, notify)
@@ -258,7 +265,7 @@ class EventInfo(object):
                 listener = linfo[-1]
                 id = self.get_id(listener())
                 if id in l_filter:
-                    for key, value in l_filter[id].items():
+                    for key, value in list(l_filter[id].items()):
                         attr = event
                         try:
                             # Get extended attributes of the event.
@@ -296,12 +303,14 @@ class EventInfo(object):
 # `EventManager` Class.
 ###############################################################################
 
+
 class EventManager(BaseEventManager):
     """ A single registry point for all application events.
 
     """
     # store the length of the BaseEvent's __mro__
-    bmro_clip = -len(BaseEvent.__mro__)+1
+    bmro_clip = -len(BaseEvent.__mro__) + 1
+
     def __init__(self):
         self.event_map = {}
         self.count = itertools.count()
@@ -389,8 +398,7 @@ class EventManager(BaseEventManager):
             
         """
         if self._trace_func is not None:
-            if self._trace_func('disconnect', self.disconnect,
-                                (cls, func)):
+            if self._trace_func('disconnect', self.disconnect, (cls, func)):
                 return
         self.event_map[cls].disconnect(func)
 
@@ -416,14 +424,16 @@ class EventManager(BaseEventManager):
 
         """
         if not block:
-            t = threading.Thread(target=self.emit, args=(event, True),
-                                 name='Event emit: {0}'.format(event))
+            t = threading.Thread(
+                target=self.emit,
+                args=(event, True),
+                name='Event emit: {0}'.format(event))
             t.start()
             return t
 
         trace_func = self._trace_func
         if trace_func is not None:
-            if trace_func('emit', self.emit, (event,)):
+            if trace_func('emit', self.emit, (event, )):
                 return
 
         cls = type(event)
@@ -437,13 +447,13 @@ class EventManager(BaseEventManager):
         for listener in listeners:
             try:
                 if trace_func is not None:
-                    if trace_func('listen', listener, (event,)):
+                    if trace_func('listen', listener, (event, )):
                         continue
                 listener(event)
             except Exception as e:
                 logger.warn('Exception {0} occurred in listener: {1} for '
-                    'event: {2}:\n{3}'.format(e, listener, event,
-                                              traceback.format_exc()))
+                            'event: {2}:\n{3}'.format(e, listener, event,
+                                                      traceback.format_exc()))
             if event._handled:
                 # Only enable when debugging -- very slow even if it doesn't get emitted because 
                 # it must still do the string formatting.
@@ -504,8 +514,10 @@ class EventManager(BaseEventManager):
                 cls = event
                 event = None
         classes = self.get_event_hierarchy(cls)
-        listeners = heapq.merge(*[evt_map[cls].get_listeners(event)
-                                    for cls in classes if cls in evt_map])
+        listeners = heapq.merge(* [
+            evt_map[cls].get_listeners(event) for cls in classes
+            if cls in evt_map
+        ])
         listeners = (l[-1]() for l in listeners)
         return listeners
 

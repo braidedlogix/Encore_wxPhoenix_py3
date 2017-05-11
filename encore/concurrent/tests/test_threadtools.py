@@ -16,7 +16,6 @@ from encore.concurrent.threadtools import synchronized
 
 
 class SynchronizedTest(unittest.TestCase):
-
     def test_synchronized(self):
         # simple test that decorator works
 
@@ -49,7 +48,7 @@ class SynchronizedTest(unittest.TestCase):
         thread1.join()
         thread2.join()
 
-        self.assertEqual(result, ['call started on thread 1',
-                                  'call finished on thread 1',
-                                  'call started on thread 2',
-                                  'call finished on thread 2'])
+        self.assertEqual(result, [
+            'call started on thread 1', 'call finished on thread 1',
+            'call started on thread 2', 'call finished on thread 2'
+        ])

@@ -63,6 +63,7 @@ def transact(function, on_commit=True):
               'Write' operations need to set it to False.
 
     """
+
     @wraps(function)
     def wrapper(self, key, *args, **kwds):
         if self._transaction is None:
@@ -77,9 +78,12 @@ def transact(function, on_commit=True):
             self._transaction_locks.append(context)
             context.__enter__()
 
-            self._transaction.commands.append((function, (self, key)+args, kwds))
+            self._transaction.commands.append((function,
+                                               (self, key) + args, kwds))
             return len(self._transaction.commands)
+
     return wrapper
+
 
 def locking(function, recurse=True, shared=False):
     """ Wrap a store method to lock the corresponding key in store from
@@ -96,11 +100,13 @@ def locking(function, recurse=True, shared=False):
         lock is an exclusive (write) lock.
 
     """
+
     @wraps(function)
     def wrapper(self, key, *args, **kwds):
         with self._locking(key, recurse, shared):
             ret = function(self, key, *args, **kwds)
         return ret
+
     return wrapper
 
 
@@ -118,6 +124,7 @@ def write_log(func, event='w'):
             'd' - delete event
 
     """
+
     @wraps(func)
     def wrapper(store, key, *args, **kwds):
         log_path = store._log_file
@@ -128,9 +135,9 @@ def write_log(func, event='w'):
             end_pos = os.stat(log_path).st_size
             if end_pos > 0:
                 # FIXME: Assuming max line length is 1024
-                log_file.seek(max(0, end_pos-1024))
+                log_file.seek(max(0, end_pos - 1024))
                 etext = log_file.read()
-                log_file.seek(0) # Needed on windows to be able to write.
+                log_file.seek(0)  # Needed on windows to be able to write.
                 text = etext.splitlines()[-1]
                 id = int(text.split()[0]) + 1
             else:
@@ -142,7 +149,9 @@ def write_log(func, event='w'):
             if id % store._logrotate_limit == 0:
                 store._log_rotate()
         return ret
+
     return wrapper
+
 
 ################################################################################
 # LockingFileSystemStore class.
@@ -153,7 +162,9 @@ class LockingFileSystemStore(FileSystemStore):
     # Basic Create/Read/Update/Delete Methods
     ##########################################################################
 
-    def __init__(self, path, force_lock_timeout=10.0,
+    def __init__(self,
+                 path,
+                 force_lock_timeout=10.0,
                  magic_fname='.FSStore',
                  remote_event_poll_interval=5.0,
                  max_time_delta=datetime.timedelta(minutes=1)):
@@ -196,12 +207,14 @@ class LockingFileSystemStore(FileSystemStore):
         self._log_keep = 5
         try:
             # Create the log file atomically.
-            os.close(os.open(self._log_file, os.O_CREAT|os.O_EXCL|os.O_RDWR))
+            os.close(
+                os.open(self._log_file, os.O_CREAT | os.O_EXCL | os.O_RDWR))
         except OSError:
             pass
 
         self._remote_event_poll_interval = remote_event_poll_interval
-        self._remote_poll_thread = threading.Thread(target=self._remote_event_emit)
+        self._remote_poll_thread = threading.Thread(
+            target=self._remote_event_emit)
         self._remote_poll_thread.daemon = True
         self._remote_poll_thread.start()
 
@@ -215,19 +228,21 @@ class LockingFileSystemStore(FileSystemStore):
 
     delete = transact(locking(write_log(FileSystemStore.delete, event='d')))
 
-    get_data = transact(locking(FileSystemStore.get_data, shared=True),
-                        on_commit=False)
+    get_data = transact(
+        locking(
+            FileSystemStore.get_data, shared=True), on_commit=False)
 
-    get_metadata = transact(locking(FileSystemStore.get_metadata, shared=True),
-                            on_commit=False)
+    get_metadata = transact(
+        locking(
+            FileSystemStore.get_metadata, shared=True), on_commit=False)
 
     set_data = transact(locking(write_log(FileSystemStore.set_data)))
 
     set_metadata = transact(locking(write_log(FileSystemStore.set_metadata)))
 
-    update_metadata = transact(locking(write_log(FileSystemStore.update_metadata,
-                                                 event='u')))
-
+    update_metadata = transact(
+        locking(write_log(
+            FileSystemStore.update_metadata, event='u')))
 
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
@@ -256,21 +271,27 @@ class LockingFileSystemStore(FileSystemStore):
         
         """
         all_metadata = glob.glob(os.path.join(self._root, '*.metadata'))
-        items = [(os.path.splitext(os.path.basename(x))[0], x) for x in all_metadata]
+        items = [(os.path.splitext(os.path.basename(x))[0], x)
+                 for x in all_metadata]
         if select is not None:
             for key, path in items:
                 self._wait_if_locked(key)
                 metadata = self._get_metadata(path)
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key, dict((metadata_key, metadata[metadata_key])
-                        for metadata_key in select if metadata_key in metadata)
+                                    for metadata_key in select
+                                    if metadata_key in metadata)
         else:
             for key, path in items:
                 self._wait_if_locked(key)
                 metadata = self._get_metadata(path)
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key, metadata.copy()
-    
+
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
         
@@ -306,11 +327,14 @@ class LockingFileSystemStore(FileSystemStore):
 
         all_metadata = glob.glob(os.path.join(self._root, '*.metadata'))
         if kwargs:
-            items = [(os.path.splitext(os.path.basename(x))[0], x) for x in all_metadata]
+            items = [(os.path.splitext(os.path.basename(x))[0], x)
+                     for x in all_metadata]
             for key, path in items:
                 self._wait_if_locked(key)
                 metadata = self._get_metadata(path)
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key
         else:
             for x in all_metadata:
@@ -375,8 +399,10 @@ class LockingFileSystemStore(FileSystemStore):
         acquired() method.
 
         """
-        return FileLock(self._get_lockfile_path(key), uid=id(self),
-                        force_timeout=self._force_lock_timeout)
+        return FileLock(
+            self._get_lockfile_path(key),
+            uid=id(self),
+            force_timeout=self._force_lock_timeout)
 
     def _wait_if_locked(self, key):
         """ Wait until the specified key is no longer acquired by someone else
@@ -414,19 +440,22 @@ class LockingFileSystemStore(FileSystemStore):
             size = os.stat(log_path).st_size
             with open(log_path, 'rb') as f:
                 first_log = f.readline()
-                f.seek(size//2)
+                f.seek(size // 2)
                 f.readline()
                 split_pos = f.tell()
                 f.seek(0)
-                file_name = '{}.{}'.format(log_path, first_log.split(b' ', 1)[0].decode('ascii'))
+                file_name = '{}.{}'.format(
+                    log_path, first_log.split(b' ', 1)[0].decode('ascii'))
                 with open(file_name, 'wb') as f2:
                     f2.write(f.read(split_pos))
                 new_text = f.read()
             with open(log_path, 'wb') as f:
                 f.write(new_text)
 
-            log_files = [path for path in glob.iglob(self._log_file+'.*')
-                                if not path.endswith('.lock')]
+            log_files = [
+                path for path in glob.iglob(self._log_file + '.*')
+                if not path.endswith('.lock')
+            ]
             log_files.sort(key=lambda s: int(s.rsplit('.')[-1]), reverse=True)
             for log_file in log_files[self._log_keep:]:
                 os.remove(log_file)
@@ -493,19 +522,21 @@ class LockingFileSystemStore(FileSystemStore):
         if text.startswith(id):
             return 0
         try:
-            return text.index('\n'+id)+1
+            return text.index('\n' + id) + 1
         except ValueError:
             return -1
 
     def _emit_remote_event(self, id, typ, date, time, key):
         """ Emit an event of appropriate type based on the log entries. """
-        cls_map = {'w':StoreSetEvent,
-                   'u':StoreUpdateEvent,
-                   'd':StoreDeleteEvent}
+        cls_map = {
+            'w': StoreSetEvent,
+            'u': StoreUpdateEvent,
+            'd': StoreDeleteEvent
+        }
         cls = cls_map.get(typ, StoreKeyEvent)
         ISO_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
         event = cls(key=key,
-                    timestamp=datetime.datetime.strptime(date+' '+time,
+                    timestamp=datetime.datetime.strptime(date + ' ' + time,
                                                          ISO_FORMAT))
         self.event_manager.emit(event)
 
@@ -525,13 +556,11 @@ class LockingFileSystemStore(FileSystemStore):
                 for line in log_file:
                     line = line.rstrip('\n')
                     id, typ, date, time, key = line.split(' ', 4)
-                    tstamp = datetime.datetime.strptime(
-                        '%s %s' % (date, time), ISO_FORMAT
-                    )
+                    tstamp = datetime.datetime.strptime('%s %s' % (date, time),
+                                                        ISO_FORMAT)
                     yield int(id), typ, tstamp, key
         except (IOError, ValueError) as exc:
             pass
 
     def __del__(self):
         self._remote_poll_thread = None
-

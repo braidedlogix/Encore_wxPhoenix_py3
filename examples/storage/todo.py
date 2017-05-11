@@ -27,6 +27,7 @@ import datetime
 
 from todo_list import ToDoView, ToDoList
 
+
 def parsedate(datestring):
     """ Parse a string into a date
     
@@ -49,6 +50,7 @@ def parsedate(datestring):
             raise ValueError("could not parse '%s' as a date" % datestring)
         return datetime.date(*time_struct[:3])
 
+
 def parsetime(timestring):
     """ Parse a string into a time
     
@@ -70,41 +72,57 @@ def parsetime(timestring):
         if result in [0, 1]:
             raise ValueError("could not parse '%s' as a date" % timestring)
         return datetime.time(*time_struct[3:6])
-        
+
 
 def _common_arguments(parser):
     """ Setup common arguments that we want all commands to parse """
     parser.add_argument('--store', choices=['file', 'sqlite'], action='store')
     parser.add_argument('--location', action='store')
-    parser.add_argument('--date', type=parsedate, default=datetime.date.today(), action='store')
-    
+    parser.add_argument(
+        '--date',
+        type=parsedate,
+        default=datetime.date.today(),
+        action='store')
+
+
 def parse():
     """ Parse commandline arguments """
     parser = argparse.ArgumentParser()
     subparser = parser.add_subparsers()
-    
+
     show_parser = subparser.add_parser('show')
     _common_arguments(show_parser)
     show_parser.set_defaults(func=show)
-    
+
     add_parser = subparser.add_parser('add')
     _common_arguments(add_parser)
-    add_parser.add_argument('--time', metavar='TIME', type=parsetime, default=datetime.datetime.now().time(), action='store')
+    add_parser.add_argument(
+        '--time',
+        metavar='TIME',
+        type=parsetime,
+        default=datetime.datetime.now().time(),
+        action='store')
     add_parser.add_argument('--who', type=str, action='store')
     add_parser.add_argument('--where', type=str, action='store')
     add_parser.set_defaults(func=add)
-    
+
     remove_parser = subparser.add_parser('remove')
     _common_arguments(remove_parser)
-    remove_parser.add_argument('--time', metavar='TIME', type=parsetime, default=datetime.datetime.now().time(), action='store')
+    remove_parser.add_argument(
+        '--time',
+        metavar='TIME',
+        type=parsetime,
+        default=datetime.datetime.now().time(),
+        action='store')
     remove_parser.add_argument('--who', type=str, action='store')
     remove_parser.set_defaults(func=remove)
-        
+
     test_parser = subparser.add_parser('test')
     _common_arguments(test_parser)
     test_parser.set_defaults(func=test)
 
-    return parser.parse_args()    
+    return parser.parse_args()
+
 
 def main():
     """ Main entrypoint """
@@ -130,41 +148,49 @@ def main():
 
     args.func(view, args)
 
+
 def show(view, args):
     view.show_day(args.date)
+
 
 def add(view, args):
     view.add_todo(args.date, args.time, args.who, args.where)
 
+
 def remove(view, args):
     view.remove_todo(args.date, args.time, args.who)
+
 
 def test(view, args):
     view.model.add_todo(
         who='Eric',
         what='Write webinar',
         where='Enthought',
-        when=datetime.datetime.combine(args.date, datetime.time(hour=9)),
-    )
+        when=datetime.datetime.combine(
+            args.date, datetime.time(hour=9)), )
     view.model.add_todo(
         who='Corran',
         what='Write Encore examples',
         where='Enthought',
-        when=datetime.datetime.combine(args.date, datetime.time(hour=8, minute=30)),
-    )
+        when=datetime.datetime.combine(
+            args.date, datetime.time(
+                hour=8, minute=30)), )
     view.model.add_todo(
         who='Chris',
         what='Test enaml code',
         where='Enthought',
-        when=datetime.datetime.combine(args.date, datetime.time(hour=10, minute=30)),
-    )
+        when=datetime.datetime.combine(
+            args.date, datetime.time(
+                hour=10, minute=30)), )
     view.model.add_todo(
         who='Everyone',
         what='Beer',
         where='Gingerman',
-        when=datetime.datetime.combine(args.date, datetime.time(hour=18, minute=30)),
-    )
+        when=datetime.datetime.combine(
+            args.date, datetime.time(
+                hour=18, minute=30)), )
     view.show_day(args.date)
+
 
 if __name__ == "__main__":
     main()

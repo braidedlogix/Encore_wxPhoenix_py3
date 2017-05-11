@@ -12,7 +12,6 @@ from tempfile import mkdtemp
 import threading
 from unittest import TestCase
 
-
 from six import itertools, next
 from six.moves import urllib
 from six.moves import socketserver as SocketServer
@@ -58,14 +57,17 @@ class StaticURLStoreReadTest(TestCase, StoreReadTestMixin):
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }
         for i in range(10):
-            self._write_data('key%d'%i, 'value%d' % i)
-            metadata['key%d'%i] = {'query_test1': 'value',
-                'query_test2': i}
+            self._write_data('key%d' % i, 'value%d' % i)
+            metadata['key%d' % i] = {'query_test1': 'value', 'query_test2': i}
             if i % 2 == 0:
-                metadata['key%d'%i]['optional'] = True
+                metadata['key%d' % i]['optional'] = True
         self._write_index('index.json', json.dumps(metadata))
 
         self._running = True
@@ -73,8 +75,7 @@ class StaticURLStoreReadTest(TestCase, StoreReadTestMixin):
         self._set_up_server()
 
         self.store = StaticURLStore(
-            self._get_base_url(), 'data/', 'index.json', poll=0
-        )
+            self._get_base_url(), 'data/', 'index.json', poll=0)
         self.store.connect()
 
     def tearDown(self):
@@ -84,11 +85,10 @@ class StaticURLStoreReadTest(TestCase, StoreReadTestMixin):
         rmtree(self.path)
 
     def utils_large(self):
-        self._write_data('test3', 'test4'*10000000)
+        self._write_data('test3', 'test4' * 10000000)
         metadata = json.load(
             open(os.path.join(self.path, 'index.json'), 'rb'),
-            encoding='ascii'
-        )
+            encoding='ascii')
         metadata['test3'] = {}
         self._write_index('index.json', json.dumps(metadata))
         self.store.update_index()
@@ -100,8 +100,8 @@ class StaticURLStoreReadTest(TestCase, StoreReadTestMixin):
         pass
 
     def _get_base_url(self):
-        return 'file:' + urllib.request.pathname2url(os.path.abspath(self.path)) + '/'
-
+        return 'file:' + urllib.request.pathname2url(
+            os.path.abspath(self.path)) + '/'
 
     def _write_data(self, filename, data):
         with open(os.path.join(self.path, 'data', filename), 'wb') as fp:
@@ -111,11 +111,12 @@ class StaticURLStoreReadTest(TestCase, StoreReadTestMixin):
         with open(os.path.join(self.path, filename), 'wb') as fp:
             fp.write(data.encode('ascii'))
 
+
 class ThreadedHTTPServer(SocketServer.ThreadingMixIn, HTTPServer):
     pass
 
-class StaticURLStoreHTTPReadTest(StaticURLStoreReadTest):
 
+class StaticURLStoreHTTPReadTest(StaticURLStoreReadTest):
     def _get_base_url(self):
         return 'http://localhost:%s/' % self.port
 
@@ -124,10 +125,10 @@ class StaticURLStoreHTTPReadTest(StaticURLStoreReadTest):
         self._oldwd = os.getcwd()
         os.chdir(self.path)
 
-        self.server = ThreadedHTTPServer(
-            ('localhost', self.port), SimpleHTTPRequestHandler
-        )
-        self.server_thread = threading.Thread(target=self.server.serve_forever, args=(0.1,))
+        self.server = ThreadedHTTPServer(('localhost', self.port),
+                                         SimpleHTTPRequestHandler)
+        self.server_thread = threading.Thread(
+            target=self.server.serve_forever, args=(0.1, ))
         self.server_thread.daemon = True
         self.server_thread.start()
 

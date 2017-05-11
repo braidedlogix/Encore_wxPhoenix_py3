@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Static URL Store
 ================
@@ -100,20 +99,23 @@ class StaticURLStore(AbstractReadOnlyStore):
     
         
     """
+
     def __init__(self, root_url, data_path, query_path, poll=300):
         super(StaticURLStore, self).__init__()
         self.root_url = root_url
         self.data_path = data_path
         self.query_path = query_path
         self.poll = poll
-        
+
         self._opener = None
         self._index = None
         self._index_lock = threading.Lock()
         self._index_thread = None
 
-                
-    def connect(self, credentials=None, proxy_handler=None, auth_handler_factory=None):
+    def connect(self,
+                credentials=None,
+                proxy_handler=None,
+                auth_handler_factory=None):
         """ Connect to the key-value store, optionally with authentication
         
         This method creates appropriate urllib openers for the store.
@@ -145,19 +147,19 @@ class StaticURLStore(AbstractReadOnlyStore):
             if proxy_handler is None:
                 self._opener = urllib.request.build_opener(auth_handler)
             else:
-                self._opener = urllib.request.build_opener(proxy_handler, auth_handler)
+                self._opener = urllib.request.build_opener(proxy_handler,
+                                                           auth_handler)
         else:
             if proxy_handler is None:
                 self._opener = urllib.request.build_opener()
             else:
                 self._opener = urllib.request.build_opener(auth_handler)
-        
+
         self.update_index()
         if self.poll > 0:
             self._index_thread = threading.Thread(target=self._poll)
             self._index_thread.start()
 
-        
     def disconnect(self):
         """ Disconnect from the key-value store
         
@@ -183,7 +185,6 @@ class StaticURLStore(AbstractReadOnlyStore):
         """
         return self._opener is not None
 
-    
     def info(self):
         """ Get information about the key-value store
         
@@ -192,16 +193,12 @@ class StaticURLStore(AbstractReadOnlyStore):
         metadata : dict
             A dictionary of metadata giving information about the key-value store.
         """
-        return {
-            'readonly': True
-        }
+        return {'readonly': True}
 
-        
     ##########################################################################
     # Basic Create/Read/Update/Delete Methods
     ##########################################################################
-    
-    
+
     def get(self, key):
         """ Retrieve a stream of data and metdata from a given key in the key-value store.
         
@@ -231,7 +228,6 @@ class StaticURLStore(AbstractReadOnlyStore):
             metadata = self._index[key].copy()
         return URLValue(url, metadata, self._opener)
 
-    
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
         
@@ -294,8 +290,7 @@ class StaticURLStore(AbstractReadOnlyStore):
             else:
                 metadata = self._index[key]
                 return dict((s, metadata[s]) for s in select if s in metadata)
-        
-                
+
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
         
@@ -314,11 +309,10 @@ class StaticURLStore(AbstractReadOnlyStore):
         with self._index_lock:
             return key in self._index
 
-        
     ##########################################################################
     # Querying Methods
     ##########################################################################
-    
+
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
         
@@ -346,16 +340,20 @@ class StaticURLStore(AbstractReadOnlyStore):
         """
         with self._index_lock:
             if select is not None:
-                for key, metadata in self._index.items():
-                    if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                for key, metadata in list(self._index.items()):
+                    if all(
+                            metadata.get(arg) == value
+                            for arg, value in list(kwargs.items())):
                         yield key, dict((metadata_key, metadata[metadata_key])
-                            for metadata_key in select if metadata_key in metadata)
+                                        for metadata_key in select
+                                        if metadata_key in metadata)
             else:
-                for key, metadata in self._index.items():
-                    if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                for key, metadata in list(self._index.items()):
+                    if all(
+                            metadata.get(arg) == value
+                            for arg, value in list(kwargs.items())):
                         yield key, metadata.copy()
 
-    
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
         
@@ -380,11 +378,12 @@ class StaticURLStore(AbstractReadOnlyStore):
         
         """
         with self._index_lock:
-            for key, metadata in self._index.items():
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+            for key, metadata in list(self._index.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key
 
-    
     ##########################################################################
     # Utility Methods
     ##########################################################################
@@ -417,24 +416,28 @@ class StaticURLStore(AbstractReadOnlyStore):
             old_keys = set(old_index)
             new_keys = set(index)
             for key in (old_keys - new_keys):
-                self.event_manager.emit(StoreDeleteEvent(self, key=key, metadata=old_index[key]))
+                self.event_manager.emit(
+                    StoreDeleteEvent(
+                        self, key=key, metadata=old_index[key]))
             for key in (new_keys - old_keys):
-                self.event_manager.emit(StoreSetEvent(self, key=key, metadata=index[key]))
+                self.event_manager.emit(
+                    StoreSetEvent(
+                        self, key=key, metadata=index[key]))
             for key in (new_keys & old_keys):
                 if old_index[key] != index[key]:
-                    self.event_manager.emit(StoreUpdateEvent(self, key=key, metadata=index[key]))
+                    self.event_manager.emit(
+                        StoreUpdateEvent(
+                            self, key=key, metadata=index[key]))
 
-        
     ##########################################################################
     # Private Methods
     ##########################################################################
-    
+
     def _poll(self):
         t = time.time()
         while self._opener is not None:
-            if time.time()-t >= self.poll:
+            if time.time() - t >= self.poll:
                 self.update_index()
                 t = time.time()
             # tick
             time.sleep(0.5)
-

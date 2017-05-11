@@ -24,8 +24,8 @@ class TestSynchronousExecutor(unittest.TestCase):
 
     def test_map(self):
         self.assertEqual(
-            list(self.executor.map(pow, range(10), range(10))),
-            list(map(pow, range(10), range(10))))
+            list(self.executor.map(pow, list(range(10)), list(range(10)))),
+            list(map(pow, list(range(10)), list(range(10)))))
 
     def test_run_after_shutdown(self):
         self.executor.shutdown()

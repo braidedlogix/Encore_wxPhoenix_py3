@@ -9,6 +9,7 @@
 
 from .abstract_event_manager import BaseEvent
 
+
 class ProgressEvent(BaseEvent):
     """ Abstract base class for all progress events
     
@@ -24,6 +25,7 @@ class ProgressEvent(BaseEvent):
         A human-readable describing the operation being performed.
     
     """
+
 
 class ProgressStartEvent(ProgressEvent):
     """ Event emitted at the start of an operation
@@ -41,6 +43,7 @@ class ProgressStartEvent(ProgressEvent):
         
     """
 
+
 class ProgressStepEvent(ProgressEvent):
     """ Event emitted periodically during an operation
     
@@ -56,6 +59,7 @@ class ProgressStepEvent(ProgressEvent):
         The count of the step.  If unknown, use -1.
         
     """
+
 
 class ProgressEndEvent(ProgressEvent):
     """ Event emitted at the end of an operation
@@ -121,13 +125,18 @@ class ProgressManager(object):
         is :py:class:`ProgressEndEvent`, but subclasses may choose to override.
     
     """
-    
+
     StartEventType = ProgressStartEvent
     StepEventType = ProgressStepEvent
     EndEventType = ProgressEndEvent
-    
-    def __init__(self, event_manager=None, source=None, operation_id=None,
-            message='Performing operation', steps=-1, **kwargs):
+
+    def __init__(self,
+                 event_manager=None,
+                 source=None,
+                 operation_id=None,
+                 message='Performing operation',
+                 steps=-1,
+                 **kwargs):
         """ Create a progress manager instance
         
         Arguments
@@ -152,23 +161,23 @@ class ProgressManager(object):
             from .package_globals import get_event_manager
             event_manager = get_event_manager()
         self.event_manager = event_manager
-        
+
         if source is None:
             source = self
         self.source = source
-        
+
         if operation_id is None:
             from uuid import uuid4
             operation_id = uuid4()
         self.operation_id = operation_id
-        
+
         self.message = message
         self.steps = steps
         self.kwargs = kwargs
-        
+
         self._step_count = 0
         self._running = False
-    
+
     def start(self, **extra_kwargs):
         """ Emit a start event
         
@@ -182,17 +191,18 @@ class ProgressManager(object):
             
         """
         self._running = True
-        
+
         kwargs = self.kwargs.copy()
         kwargs.update(**extra_kwargs)
-        
-        self.event_manager.emit(self.StartEventType(
-            source=self.source,
-            operation_id=self.operation_id,
-            message=self.message,
-            steps=self.steps,
-            **kwargs))
-    
+
+        self.event_manager.emit(
+            self.StartEventType(
+                source=self.source,
+                operation_id=self.operation_id,
+                message=self.message,
+                steps=self.steps,
+                **kwargs))
+
     def step(self, message=None, step=None, **extra_kwargs):
         """ Emit a step event
         
@@ -219,12 +229,13 @@ class ProgressManager(object):
         kwargs = self.kwargs.copy()
         kwargs.update(**extra_kwargs)
 
-        self.event_manager.emit(self.StepEventType(
-            source=self.source,
-            operation_id=self.operation_id,
-            message=message,
-            step=step,
-            **kwargs))
+        self.event_manager.emit(
+            self.StepEventType(
+                source=self.source,
+                operation_id=self.operation_id,
+                message=message,
+                step=step,
+                **kwargs))
 
         self._step_count += 1
 
@@ -247,29 +258,30 @@ class ProgressManager(object):
         """
         if not self._running:
             raise Exception("ProgressManager.end() called before start()")
-            
+
         message = self.message if message is None else message
         kwargs = self.kwargs.copy()
         kwargs.update(**extra_kwargs)
 
-        self.event_manager.emit(self.EndEventType(
-            source=self.source,
-            operation_id=self.operation_id,
-            message=message,
-            exit_state=exit_state,
-            **kwargs))
+        self.event_manager.emit(
+            self.EndEventType(
+                source=self.source,
+                operation_id=self.operation_id,
+                message=message,
+                exit_state=exit_state,
+                **kwargs))
         self._running = False
 
     def __call__(self, message=None, step=None, **extra_kwargs):
         if not self._running:
             self.start()
         self.step(message, step, **extra_kwargs)
-    
+
     def __enter__(self):
         if not self._running:
             self.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
         if self._running:
             if exc_value is not None:

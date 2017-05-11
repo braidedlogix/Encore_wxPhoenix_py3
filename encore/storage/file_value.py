@@ -10,8 +10,8 @@ import os
 from .abstract_store import Value, AuthorizationError
 from .utils import BufferIteratorIO, buffer_iterator
 
-class FileValue(Value):
 
+class FileValue(Value):
     def __init__(self, path, metadata=None):
         self._path = path
         self._data_stream = None
@@ -39,10 +39,10 @@ class FileValue(Value):
             self._data_stream = open(self._path, 'rb')
         self._data_stream.seek(start)
         if end is not None:
-            max_bytes = end-start
+            max_bytes = end - start
             return BufferIteratorIO(
-                buffer_iterator(self._data_stream, max_bytes=max_bytes)
-            )
+                buffer_iterator(
+                    self._data_stream, max_bytes=max_bytes))
         else:
             return self._data_stream
 

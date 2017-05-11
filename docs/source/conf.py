@@ -27,12 +27,8 @@ sys.path.insert(0, os.path.abspath('./sphinxext'))
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.graphviz',
-    'sphinx.ext.inheritance_diagram',
-    'refactor_doc'
+    'sphinx.ext.autodoc', 'sphinx.ext.intersphinx', 'sphinx.ext.todo',
+    'sphinx.ext.graphviz', 'sphinx.ext.inheritance_diagram', 'refactor_doc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -48,8 +44,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Encore'
-copyright = u'2011-2017, Enthought, Inc.'
+project = 'Encore'
+copyright = '2011-2017, Enthought, Inc.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,7 +91,6 @@ pygments_style = 'sphinx'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
-
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -177,7 +172,6 @@ html_show_sourcelink = True
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'encore'
 
-
 # -- Options for LaTeX output --------------------------------------------------
 
 # The paper size ('letter' or 'a4').
@@ -188,10 +182,8 @@ htmlhelp_basename = 'encore'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-  ('index', 'encore.tex', u'Encore Documentation',
-   u'Enthought, Inc.', 'manual'),
-]
+latex_documents = [('index', 'encore.tex', 'Encore Documentation',
+                    'Enthought, Inc.', 'manual'), ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -216,16 +208,12 @@ latex_use_parts = False
 # If false, no module index is generated.
 latex_domain_indices = True
 
-
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'encore', u'Encore Documentation',
-     [u'Enthought, Inc.'], 1)
-]
-
+man_pages = [('index', 'encore', 'Encore Documentation', ['Enthought, Inc.'],
+              1)]
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}

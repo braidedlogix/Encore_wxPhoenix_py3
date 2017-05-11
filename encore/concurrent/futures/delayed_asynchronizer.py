@@ -29,7 +29,11 @@ class DelayedAsynchronizer(Asynchronizer):
 
     """
 
-    def __init__(self, executor, interval, name=None, callback=None,
+    def __init__(self,
+                 executor,
+                 interval,
+                 name=None,
+                 callback=None,
                  timer_factory=None):
         """Initialize the Asynchronizer.
 
@@ -86,17 +90,14 @@ class DelayedAsynchronizer(Asynchronizer):
             future.result()
         except Exception as e:
             exc_type = type(e)
-            logger.exception(
-                "{0} occurred in submitted {1} job.".format(
-                    exc_type.__name__,
-                    self.name,
-                )
-            )
+            logger.exception("{0} occurred in submitted {1} job.".format(
+                exc_type.__name__,
+                self.name, ))
             logger.error('Actual error:\n{}'.format(future.traceback()))
 
         with self._state_lock:
-            self._timer = self._timer_factory(
-                self._interval, self._timer_callback)
+            self._timer = self._timer_factory(self._interval,
+                                              self._timer_callback)
             self._timer.start()
 
     def _timer_callback(self):

@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Simple Authenticating Store
 ===========================
@@ -25,6 +24,7 @@ method to provide different or more controlled permissioning.
 import hashlib
 
 from .abstract_store import AbstractStore
+
 
 class AuthenticationError(Exception):
     pass
@@ -56,7 +56,8 @@ def make_encoder(salt, hasher=None):
     # probably have access to the raw underlying store as well.
     if hasher is None:
         hasher = sha1_hasher
-    return eval("lambda password: hasher("+repr(salt)+"+password)", {'hasher': hasher})
+    return eval("lambda password: hasher(" + repr(salt) + "+password)",
+                {'hasher': hasher})
 
 
 class SimpleAuthStore(AbstractStore):
@@ -85,18 +86,22 @@ class SimpleAuthStore(AbstractStore):
         The store to store the user keys in.  Defaults to the wrapped store.
         
     """
-    def __init__(self, store, encoder, user_key_path='.user_', user_key_store=None):
+
+    def __init__(self,
+                 store,
+                 encoder,
+                 user_key_path='.user_',
+                 user_key_store=None):
         super(SimpleAuthStore, self).__init__()
         self.store = store
         self.encoder = encoder
         self.user_key_path = user_key_path
         self.user_key_store = store if user_key_store is None else user_key_store
-        
+
         self._username = None
         self._token = None
         self._connected = False
 
-                                
     def connect(self, credentials=None):
         """ Connect to the key-value store, optionally with authentication
         
@@ -112,12 +117,13 @@ class SimpleAuthStore(AbstractStore):
         self._username = credentials['username']
         # We only support utf-8 encoded byte strings for the encoding
         self._token = self.encoder(credentials['password'].encode('utf-8'))
-        
+
         if 'connect' not in self.check_permissions():
-            raise AuthenticationError('User "%s" is not authenticated for connection' % self._username)
+            raise AuthenticationError(
+                'User "%s" is not authenticated for connection' %
+                self._username)
         self._connected = True
-        
-        
+
     def disconnect(self):
         """ Disconnect from the key-value store
         
@@ -128,7 +134,6 @@ class SimpleAuthStore(AbstractStore):
         self._connected = False
         self._token = None
         self.store = None
-
 
     def is_connected(self):
         """ Whether or not the store is currently connected
@@ -141,7 +146,6 @@ class SimpleAuthStore(AbstractStore):
         """
         return self._connected
 
-    
     def info(self):
         """ Get information about the key-value store
         
@@ -150,11 +154,8 @@ class SimpleAuthStore(AbstractStore):
         metadata : dict
             A dictionary of metadata giving information about the key-value store.
         """
-        return {
-            'readonly': self.store.info.get('readonly', True),
-        }
+        return {'readonly': self.store.info.get('readonly', True), }
 
-        
     ##########################################################################
     # Basic Create/Read/Update/Delete Methods
     ##########################################################################
@@ -190,11 +191,12 @@ class SimpleAuthStore(AbstractStore):
             if 'get' in permissions:
                 return self.store.get(key)
             else:
-                raise AuthenticationError('User "%s" is not permitted to get "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to get "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def set(self, key, value, buffer_size=1048576):
         """ Store a stream of data into a given key in the key-value store.
         
@@ -241,11 +243,12 @@ class SimpleAuthStore(AbstractStore):
             if 'set' in permissions:
                 return self.store.set(key, value, buffer_size)
             else:
-                raise AuthenticationError('User "%s" is not permitted to set "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to set "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def delete(self, key):
         """ Delete a key from the repsository.
         
@@ -275,11 +278,12 @@ class SimpleAuthStore(AbstractStore):
             if 'delete' in permissions:
                 return self.store.delete(key)
             else:
-                raise AuthenticationError('User "%s" is not permitted to delete "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to delete "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
         
@@ -309,11 +313,12 @@ class SimpleAuthStore(AbstractStore):
             if 'get' in permissions:
                 return self.store.get_data(key)
             else:
-                raise AuthenticationError('User "%s" is not permitted to get "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to get "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def get_metadata(self, key, select=None):
         """ Retrieve the metadata for a given key in the key-value store.
         
@@ -347,12 +352,12 @@ class SimpleAuthStore(AbstractStore):
             if 'get' in permissions:
                 return self.store.get_metadata(key, select)
             else:
-                raise AuthenticationError('User "%s" is not permitted to get "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to get "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
-            
 
-    
     def set_data(self, key, data, buffer_size=1048576):
         """ Replace the data for a given key in the key-value store.
         
@@ -395,11 +400,12 @@ class SimpleAuthStore(AbstractStore):
             if 'set' in permissions:
                 return self.store.set_data(key, data, buffer_size)
             else:
-                raise AuthenticationError('User "%s" is not permitted to set "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to set "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
         
@@ -432,11 +438,12 @@ class SimpleAuthStore(AbstractStore):
             if 'set' in permissions:
                 return self.store.set_metadata(key, metadata)
             else:
-                raise AuthenticationError('User "%s" is not permitted to set "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to set "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
 
-    
     def update_metadata(self, key, metadata):
         """ Update the metadata for a given key in the key-value store.
         
@@ -469,11 +476,12 @@ class SimpleAuthStore(AbstractStore):
             if 'set' in permissions:
                 return self.store.update_metadata(key, metadata)
             else:
-                raise AuthenticationError('User "%s" is not permitted to set "%s"' % (self._username, key))
+                raise AuthenticationError(
+                    'User "%s" is not permitted to set "%s"' %
+                    (self._username, key))
         else:
             raise KeyError(key)
-            
-    
+
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
         
@@ -497,7 +505,6 @@ class SimpleAuthStore(AbstractStore):
             return self.store.exists(key)
         else:
             return False
-
 
     def transaction(self, note):
         return self.store.transaction(note)

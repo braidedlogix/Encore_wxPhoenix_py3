@@ -13,23 +13,24 @@ from ..mounted_store import MountedStore
 from ..dict_memory_store import DictMemoryStore
 from ..string_value import StringValue
 
-class MountedStoreTest(TestCase):
 
+class MountedStoreTest(TestCase):
     def setUp(self):
         super(MountedStoreTest, self).setUp()
         self.mounted_store = DictMemoryStore()
         self.backing_store = DictMemoryStore()
         t = time.time()
-        self.mounted_store._store['test1'] = (
-            b'mounted\n', {'metakey': 'mounted'}, t, t
-        )
-        self.backing_store._store['test/test1'] = (
-            b'backing\n', {'metakey': 'backing',}, t, t
-        )
-        self.backing_store._store['test/test2'] = (
-            b'backing\n', {'metakey': 'backing',}, t, t
-        )
-        self.store = MountedStore('test/', self.mounted_store, self.backing_store)
+        self.mounted_store._store['test1'] = (b'mounted\n', {
+            'metakey': 'mounted'
+        }, t, t)
+        self.backing_store._store['test/test1'] = (b'backing\n', {
+            'metakey': 'backing',
+        }, t, t)
+        self.backing_store._store['test/test2'] = (b'backing\n', {
+            'metakey': 'backing',
+        }, t, t)
+        self.store = MountedStore('test/', self.mounted_store,
+                                  self.backing_store)
 
     def test_get_masked(self):
         value = self.store.get('test/test1')
@@ -58,7 +59,8 @@ class MountedStoreTest(TestCase):
         self.assertEqual(value, {"metakey": "backing"})
 
     def test_set_masked(self):
-        self.store.set('test/test2', StringValue(b'mounted\n', {'metakey': 'mounted'}))
+        self.store.set('test/test2',
+                       StringValue(b'mounted\n', {'metakey': 'mounted'}))
         # test value in combined store
         value = self.store.get('test/test2')
         self.assertEqual(value.data.read(), b"mounted\n")
@@ -106,11 +108,15 @@ class MountedStoreTest(TestCase):
         # test value in combined store
         value = self.store.get('test/test2')
         self.assertEqual(value.data.read(), b"backing\n")
-        self.assertEqual(value.metadata, {"metakey": "backing", 'newkey': "mounted"})
+        self.assertEqual(value.metadata,
+                         {"metakey": "backing",
+                          'newkey': "mounted"})
         # test value in underlying store
         value = self.mounted_store.get('test2')
         self.assertEqual(value.data.read(), b"backing\n")
-        self.assertEqual(value.metadata, {"metakey": "backing", 'newkey': "mounted"})
+        self.assertEqual(value.metadata,
+                         {"metakey": "backing",
+                          'newkey': "mounted"})
 
     def test_push(self):
         self.store.push('test/test1')
@@ -127,7 +133,6 @@ class MountedStoreTest(TestCase):
 
 
 class MountedStoreReadTest(TestCase, StoreReadTestMixin):
-
     def setUp(self):
         """ Set up a data store for the test case
 
@@ -149,29 +154,30 @@ class MountedStoreReadTest(TestCase, StoreReadTestMixin):
         self.mounted_store = DictMemoryStore()
         self.backing_store = DictMemoryStore()
         t = time.time()
-        self.backing_store._store['test1'] = (
-            b'test2\n',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t
-        )
+        self.backing_store._store['test1'] = (b'test2\n', {
+            'a_str': 'test3',
+            'an_int': 1,
+            'a_float': 2.0,
+            'a_bool': True,
+            'a_list': ['one', 'two', 'three'],
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        }, t, t)
         stores = [self.mounted_store, self.backing_store]
         for i in range(10):
-            metadata = {'query_test1': 'value',
-                'query_test2': i}
+            metadata = {'query_test1': 'value', 'query_test2': i}
             if i % 2 == 0:
                 metadata['optional'] = True
             t = time.time()
-            stores[i%2]._store['key%d'%i] = (b'value%d' % i, metadata, t, t)
+            stores[i % 2]._store['key%d' % i] = (b'value%d' % i, metadata, t,
+                                                 t)
         self.store = MountedStore('', self.mounted_store, self.backing_store)
 
-class MountedStoreWriteTest(TestCase, StoreWriteTestMixin):
 
+class MountedStoreWriteTest(TestCase, StoreWriteTestMixin):
     def setUp(self):
         """ Set up a data store for the test case
 
@@ -192,39 +198,39 @@ class MountedStoreWriteTest(TestCase, StoreWriteTestMixin):
         self.mounted_store = DictMemoryStore()
         self.backing_store = DictMemoryStore()
         t = time.time()
-        self.backing_store._store['test1'] = (
-            b'test2\n',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t
-        )
+        self.backing_store._store['test1'] = (b'test2\n', {
+            'a_str': 'test3',
+            'an_int': 1,
+            'a_float': 2.0,
+            'a_bool': True,
+            'a_list': ['one', 'two', 'three'],
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        }, t, t)
         stores = [self.mounted_store, self.backing_store]
         for i in range(10):
-            key = 'existing_key'+str(i)
+            key = 'existing_key' + str(i)
             data = b'existing_value%i' % i
             metadata = {'meta': True, 'meta1': -i}
             t = time.time()
-            stores[i%2]._store[key] = (data, metadata, t, t)
+            stores[i % 2]._store[key] = (data, metadata, t, t)
         self.store = MountedStore('', self.mounted_store, self.backing_store)
 
     def test_multiset_metadata(self):
         super(MountedStoreWriteTest, self).test_multiset_metadata()
-        keys = ['existing_key'+str(i) for i in range(10)]
+        keys = ['existing_key' + str(i) for i in range(10)]
         metadatas = [{'meta1': i, 'meta2': True} for i in range(10)]
         for i in range(10):
             self.assertTrue(self.mounted_store.exists(keys[i]))
-            self.assertEquals(self.mounted_store.get_metadata(keys[i]), metadatas[i])
+            self.assertEqual(
+                self.mounted_store.get_metadata(keys[i]), metadatas[i])
 
     def test_delete(self):
         """ Test that delete works for keys in mounted store """
         t = time.time()
-        self.mounted_store._store['test2'] = (
-            b'test2\n', {}, t, t
-        )
+        self.mounted_store._store['test2'] = (b'test2\n', {}, t, t)
         self.store.delete('test2')
         self.assertFalse(self.store.exists('test2'))

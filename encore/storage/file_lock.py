@@ -43,8 +43,15 @@ class LockError(Exception):
 
 class FileLock(object):
     """ A simple file-based discretionary (advisory) exclusive lock. """
-    def __init__(self, name, dir=None, poll_interval=1e-2, timeout=0,
-                 force_timeout=0, uid=None, data=None):
+
+    def __init__(self,
+                 name,
+                 dir=None,
+                 poll_interval=1e-2,
+                 timeout=0,
+                 force_timeout=0,
+                 uid=None,
+                 data=None):
         """ Constructor.
 
         Parameters
@@ -94,13 +101,11 @@ class FileLock(object):
         self._open_mode = os.O_CREAT | os.O_EXCL | os.O_RDWR
         if hasattr(os, 'O_BINARY'):
             self._open_mode |= os.O_BINARY
-            
+
         if data is None:
             self._data = b'%s\n%i\n%s\n%i\n%s' % (
                 socket.gethostname().encode('ascii'), os.getpid(),
-                getpass.getuser().encode('ascii'),
-                self.uid, b'LOCK'
-            )
+                getpass.getuser().encode('ascii'), self.uid, b'LOCK')
         else:
             self._data = data
 
@@ -127,9 +132,9 @@ class FileLock(object):
                 os.write(fd, self._data)
                 os.close(fd)
                 return True
-            if 0 < self.timeout < time.time()-start_time:
+            if 0 < self.timeout < time.time() - start_time:
                 return False
-            if 0 < self.force_timeout < time.time()-start_time:
+            if 0 < self.force_timeout < time.time() - start_time:
                 self.force_break()
                 continue
             time.sleep(self.poll_interval)
@@ -168,7 +173,7 @@ class FileLock(object):
         if os.path.isfile(self.full_path):
             return True
         elif os.path.isdir(self.full_path):
-            return len(os.listdir(self.full_path))>0
+            return len(os.listdir(self.full_path)) > 0
         else:
             return False
 
@@ -207,14 +212,14 @@ class FileLock(object):
         start_time = time.time()
         while True:
             if self.locked():
-                if 0 < self.timeout < time.time()-start_time:
+                if 0 < self.timeout < time.time() - start_time:
                     return False
-                if 0 < self.force_timeout < time.time()-start_time:
+                if 0 < self.force_timeout < time.time() - start_time:
                     self.force_break()
                 time.sleep(self.poll_interval)
             else:
                 return True
-                
+
     def get_data(self):
         """Return the data stored in the lock file.
         
@@ -237,8 +242,14 @@ class FileLock(object):
 
 class SharedFileLock(object):
     """ A simple file-based discretionary (advisory) shared lock. """
-    def __init__(self, name, dir=None, poll_interval=1e-2, timeout=0,
-                 force_timeout=0, uid=None):
+
+    def __init__(self,
+                 name,
+                 dir=None,
+                 poll_interval=1e-2,
+                 timeout=0,
+                 force_timeout=0,
+                 uid=None):
         """ Constructor.
 
         Parameters
@@ -279,8 +290,8 @@ class SharedFileLock(object):
         self.timeout = timeout
         self.force_timeout = force_timeout
         self.uid = id(self) if uid is None else uid
-        self.file_name = '%s__%s__%s__%s.lock'%(socket.gethostname(),
-                                    os.getpid(), getpass.getuser(), self.uid)
+        self.file_name = '%s__%s__%s__%s.lock' % (
+            socket.gethostname(), os.getpid(), getpass.getuser(), self.uid)
         self.full_path = os.path.join(self.dir_path, self.file_name)
         self._level = 0
         self._open_mode = os.O_CREAT | os.O_EXCL | os.O_RDWR
@@ -316,9 +327,9 @@ class SharedFileLock(object):
                 os.close(fd)
                 self._level += 1
                 return True
-            if 0 < self.timeout < time.time()-start_time:
+            if 0 < self.timeout < time.time() - start_time:
                 return False
-            if 0 < self.force_timeout < time.time()-start_time:
+            if 0 < self.force_timeout < time.time() - start_time:
                 self.force_break()
                 continue
             time.sleep(self.poll_interval)
@@ -371,4 +382,3 @@ class SharedFileLock(object):
                 else:
                     return False
         return True
-

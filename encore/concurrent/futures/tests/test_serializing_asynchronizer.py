@@ -18,7 +18,6 @@ from encore.concurrent.futures.enhanced_thread_pool_executor import (
 
 
 class Worker(object):
-
     def __init__(self):
         self.data = []
 
@@ -33,6 +32,7 @@ class TestHandler(logging.Handler):
     Simple logging handler that just accumulates and stores records.
 
     """
+
     def __init__(self):
         logging.Handler.__init__(self)
         self.records = []
@@ -67,16 +67,13 @@ class TestException(Exception):
 
 
 class TestSerializingAsynchronizer(unittest.TestCase):
-
     def setUp(self):
         self.executor = EnhancedThreadPoolExecutor(
             name='TestSerializingAsynchronizerExecutor',
-            max_workers=1,
-        )
+            max_workers=1, )
         self.asynchronizer = SerializingAsynchronizer(
             name='TestSerializingAsynchronizer',
-            executor=self.executor,
-        )
+            executor=self.executor, )
 
     def test_events_collapsed(self):
         worker1 = Worker()
@@ -123,8 +120,7 @@ class TestSerializingAsynchronizer(unittest.TestCase):
         asynchronizer = SerializingAsynchronizer(
             name='TestCallbackSerializingAsynchronizer',
             executor=self.executor,
-            callback=_callback
-        )
+            callback=_callback)
 
         worker1 = Worker()
         worker2 = Worker()
@@ -169,9 +165,8 @@ class TestSerializingAsynchronizer(unittest.TestCase):
         asynchronizer = SerializingAsynchronizer(
             executor=self.executor, name="Will")
         self.assertEqual(asynchronizer.name, "Will")
-        self.assertEqual(
-            asynchronizer._executor.name,
-            'TestSerializingAsynchronizerExecutor')
+        self.assertEqual(asynchronizer._executor.name,
+                         'TestSerializingAsynchronizerExecutor')
 
     def test_submit_after_shutdown(self):
         self.asynchronizer.shutdown()
@@ -212,8 +207,7 @@ class TestSerializingAsynchronizer(unittest.TestCase):
         asynchronizer = SerializingAsynchronizer(
             name='TestCallbackExceptionSerializingAsynchronizer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a bad job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'
@@ -245,8 +239,7 @@ class TestSerializingAsynchronizer(unittest.TestCase):
         asynchronizer = SerializingAsynchronizer(
             name='TestCallbackExceptionSerializingAsynchronizer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a good job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'

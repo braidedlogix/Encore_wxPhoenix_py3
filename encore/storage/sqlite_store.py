@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Sqlite Store
 ------------
@@ -18,7 +17,6 @@ This class is provided in part as a sample implementation of the API.
 
 """
 
-
 import sqlite3
 import time
 
@@ -29,10 +27,8 @@ from six.moves import cPickle
 from .abstract_store import AbstractStore
 from .string_value import StringValue
 from .events import StoreSetEvent, StoreUpdateEvent, StoreDeleteEvent
-from .utils import (
-    buffer_iterator, SimpleTransactionContext, StoreProgressManager,
-    add_context_manager_support
-)
+from .utils import (buffer_iterator, SimpleTransactionContext,
+                    StoreProgressManager, add_context_manager_support)
 
 if six.PY3:
     buffer = sqlite3.Binary
@@ -47,6 +43,7 @@ def convert_dict(s):
         return cPickle.loads(s, encoding='ascii')
     else:
         return cPickle.loads(s)
+
 
 sqlite3.register_adapter(dict, adapt_dict)
 sqlite3.register_converter('dict', convert_dict)
@@ -64,13 +61,18 @@ class SqliteStore(AbstractStore):
         user-supplied values.  This is particularly important for indexed queries.
     """
 
-    def __init__(self, location=':memory:', table='store', index='dynamic', index_columns=None):
+    def __init__(self,
+                 location=':memory:',
+                 table='store',
+                 index='dynamic',
+                 index_columns=None):
         super(SqliteStore, self).__init__()
         self.location = location
         self.table = table
 
         self._index = index
-        self.index_columns = set(index_columns) if index_columns is not None else set()
+        self.index_columns = set(
+            index_columns) if index_columns is not None else set()
 
         self._connection = None
 
@@ -81,11 +83,11 @@ class SqliteStore(AbstractStore):
         Sqlite has no notion of authentication, so credentials are ignored.
 
         """
-        self._connection = sqlite3.connect(self.location, detect_types=sqlite3.PARSE_DECLTYPES)
+        self._connection = sqlite3.connect(
+            self.location, detect_types=sqlite3.PARSE_DECLTYPES)
         cursor = self._connection.execute(
             "select name from sqlite_master where type='table' and name=?",
-            (self.table,)
-        )
+            (self.table, ))
         if len(cursor.fetchall()) == 0:
             # we need to create the table (substitution OK since self.table is internal
             query = """create table %s (
@@ -98,9 +100,11 @@ class SqliteStore(AbstractStore):
             self._connection.execute(query)
         elif self._index is not None:
             # we need to find the names of the existing index columns
-            rows = self._connection.execute('PRAGMA table_info(%s)' % self.table)
+            rows = self._connection.execute('PRAGMA table_info(%s)' %
+                                            self.table)
             index_columns = set(row[0] for row in rows
-                if row[0] not in ('key', 'metadata', 'created', 'modified', 'data'))
+                                if row[0] not in ('key', 'metadata', 'created',
+                                                  'modified', 'data'))
             if not self.index_columns.issubset(index_columns):
                 # being paranoid here
                 self._build_index()
@@ -164,12 +168,12 @@ class SqliteStore(AbstractStore):
             If the key is not found in the store, a KeyError is raised.
 
         """
-        row = self._get_columns_by_key(key, ['metadata', 'data', 'created', 'modified'])
+        row = self._get_columns_by_key(
+            key, ['metadata', 'data', 'created', 'modified'])
         if row is None:
             raise KeyError(key)
-        return StringValue(
-            row['data'], row['metadata'], row['created'], row['modified']
-        )
+        return StringValue(row['data'], row['metadata'], row['created'],
+                           row['modified'])
 
     def set(self, key, value, buffer_size=1048576):
         """ Store a stream of data into a given key in the key-value store.
@@ -202,9 +206,12 @@ class SqliteStore(AbstractStore):
             steps = value.size
         update = self.exists(key)
 
-        progress = StoreProgressManager(source=self, steps=steps,
-                message="Setting data into '%s'" % (key,), key=key,
-                metadata=metadata)
+        progress = StoreProgressManager(
+            source=self,
+            steps=steps,
+            message="Setting data into '%s'" % (key, ),
+            key=key,
+            metadata=metadata)
 
         with progress:
             chunks = list(buffer_iterator(data_stream, buffer_size, progress))
@@ -220,9 +227,13 @@ class SqliteStore(AbstractStore):
             self._update_index(key, metadata)
 
         if update:
-            self.event_manager.emit(StoreUpdateEvent(self, key=key, metadata=metadata))
+            self.event_manager.emit(
+                StoreUpdateEvent(
+                    self, key=key, metadata=metadata))
         else:
-            self.event_manager.emit(StoreSetEvent(self, key=key, metadata=metadata))
+            self.event_manager.emit(
+                StoreSetEvent(
+                    self, key=key, metadata=metadata))
 
     def delete(self, key):
         """ Delete a key from the repsository.
@@ -246,9 +257,10 @@ class SqliteStore(AbstractStore):
 
         with self.transaction('Deleting "%s"' % key):
             query = 'delete from %s where key=?' % self.table
-            self._connection.execute(query, (key,))
-            self.event_manager.emit(StoreDeleteEvent(self, key=key, metadata=metadata))
-
+            self._connection.execute(query, (key, ))
+            self.event_manager.emit(
+                StoreDeleteEvent(
+                    self, key=key, metadata=metadata))
 
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
@@ -266,7 +278,6 @@ class SqliteStore(AbstractStore):
 
         """
         return self._get_columns_by_key(key, ['metadata']) is not None
-
 
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
@@ -294,7 +305,6 @@ class SqliteStore(AbstractStore):
             raise KeyError(key)
         data = add_context_manager_support(BytesIO(row['data']))
         return data
-
 
     def get_metadata(self, key, select=None):
         """ Retrieve the metadata for a given key in the key-value store.
@@ -328,9 +338,8 @@ class SqliteStore(AbstractStore):
         metadata = row['metadata']
         if select is not None:
             return dict((metadata_key, metadata[metadata_key])
-                for metadata_key in select if metadata_key in metadata)
+                        for metadata_key in select if metadata_key in metadata)
         return metadata
-
 
     def set_data(self, key, data, buffer_size=1048576):
         """ Replace the data for a given key in the key-value store.
@@ -371,7 +380,6 @@ class SqliteStore(AbstractStore):
             metadata = {}
         self.set(key, (data, metadata), buffer_size)
 
-
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
 
@@ -393,15 +401,19 @@ class SqliteStore(AbstractStore):
             with self.transaction('Setting metadata for "%s"' % key):
                 created = self._get_columns_by_key(key, ['created'])['created']
                 modified = time.time()
-                self._update_columns(key, ['metadata', 'modified'], [metadata, modified])
-                self.event_manager.emit(StoreUpdateEvent(self, key=key, metadata=metadata))
+                self._update_columns(key, ['metadata', 'modified'],
+                                     [metadata, modified])
+                self.event_manager.emit(
+                    StoreUpdateEvent(
+                        self, key=key, metadata=metadata))
         else:
             with self.transaction('Setting metadata for "%s"' % key):
                 modified = created = time.time()
                 self._insert_row(key, metadata, buffer(''), created, modified)
                 self._update_index(key, metadata)
-                self.event_manager.emit(StoreSetEvent(self, key=key, metadata=metadata))
-
+                self.event_manager.emit(
+                    StoreSetEvent(
+                        self, key=key, metadata=metadata))
 
     def update_metadata(self, key, metadata):
         """ Update the metadata for a given key in the key-value store.
@@ -433,21 +445,19 @@ class SqliteStore(AbstractStore):
         with self.transaction('Setting metadata for "%s"' % key):
             self._update_column(key, 'metadata', temp_metadata)
             self._update_index(key, metadata)
-            self.event_manager.emit(StoreUpdateEvent(self, key=key, metadata=temp_metadata))
-
+            self.event_manager.emit(
+                StoreUpdateEvent(
+                    self, key=key, metadata=temp_metadata))
 
     def transaction(self, notes):
         """ Provide a transaction context manager"""
         return SimpleTransactionContext(self)
 
-
     def _commit_transaction(self):
         self._connection.commit()
 
-
     def _rollback_transaction(self):
         self._connection.rollback()
-
 
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
@@ -474,30 +484,39 @@ class SqliteStore(AbstractStore):
 
         """
         if self._index and kwargs:
-            columns = list(column for column in kwargs if column in self.index_columns)
+            columns = list(column for column in kwargs
+                           if column in self.index_columns)
             unindexed_columns = set(kwargs) - set(columns)
             if columns:
-                query = 'select key, metadata from "%s" where %s' % (self.table,
-                    ' and '.join('"'+column+'"=?' for column in columns))
+                query = 'select key, metadata from "%s" where %s' % (
+                    self.table, ' and '.join('"' + column + '"=?'
+                                             for column in columns))
             else:
-                query = 'select key, metadata from "%s"' % (self.table,)
-            rows = self._connection.execute(query, [buffer(cPickle.dumps(kwargs[column], protocol=2))
-                for column in columns])
+                query = 'select key, metadata from "%s"' % (self.table, )
+            rows = self._connection.execute(
+                query, [
+                    buffer(cPickle.dumps(
+                        kwargs[column], protocol=2)) for column in columns
+                ])
         else:
             unindexed_columns = set(kwargs)
             rows = self._connection.execute('select key, metadata from "' +
-                self.table + '"')
+                                            self.table + '"')
 
         if select is not None:
             for key, metadata in rows:
-                if all(metadata.get(arg) == kwargs[arg] for arg in unindexed_columns):
+                if all(
+                        metadata.get(arg) == kwargs[arg]
+                        for arg in unindexed_columns):
                     yield key, dict((metadata_key, metadata[metadata_key])
-                        for metadata_key in select if metadata_key in metadata)
+                                    for metadata_key in select
+                                    if metadata_key in metadata)
         else:
             for key, metadata in rows:
-                if all(metadata.get(arg) == kwargs[arg] for arg in unindexed_columns):
+                if all(
+                        metadata.get(arg) == kwargs[arg]
+                        for arg in unindexed_columns):
                     yield key, metadata.copy()
-
 
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
@@ -523,39 +542,46 @@ class SqliteStore(AbstractStore):
 
         """
         if self._index and kwargs:
-            columns = list(column for column in kwargs if column in self.index_columns)
+            columns = list(column for column in kwargs
+                           if column in self.index_columns)
             unindexed_columns = set(kwargs) - set(columns)
             if unindexed_columns:
                 if columns:
-                    query = 'select key, metadata from "%s" where %s' % (self.table,
-                        ' and '.join('"'+column+'"=?' for column in columns))
+                    query = 'select key, metadata from "%s" where %s' % (
+                        self.table, ' and '.join('"' + column + '"=?'
+                                                 for column in columns))
                 else:
-                    query = 'select key, metadata from "%s"' % (self.table,)
+                    query = 'select key, metadata from "%s"' % (self.table, )
             else:
                 if columns:
-                    query = 'select key from %s where "%s"' % (self.table,
-                        ' and '.join('"'+column+'"=?' for column in columns))
+                    query = 'select key from %s where "%s"' % (
+                        self.table, ' and '.join('"' + column + '"=?'
+                                                 for column in columns))
                 else:
-                    query = 'select key from "%s"' % (self.table,)
-            rows = self._connection.execute(query, [buffer(cPickle.dumps(kwargs[column], protocol=2))
-                for column in columns])
+                    query = 'select key from "%s"' % (self.table, )
+            rows = self._connection.execute(
+                query, [
+                    buffer(cPickle.dumps(
+                        kwargs[column], protocol=2)) for column in columns
+                ])
         else:
             unindexed_columns = set(kwargs)
             if unindexed_columns:
-                rows = self._connection.execute('select key, metadata from "'
-                    + self.table + '"')
+                rows = self._connection.execute('select key, metadata from "' +
+                                                self.table + '"')
             else:
                 rows = self._connection.execute('select key from "' +
-                    self.table + '"')
+                                                self.table + '"')
 
         if unindexed_columns:
             for key, metadata in rows:
-                if all(metadata.get(arg) == kwargs[arg] for arg in unindexed_columns):
+                if all(
+                        metadata.get(arg) == kwargs[arg]
+                        for arg in unindexed_columns):
                     yield key
         else:
             for key, in rows:
                 yield key
-
 
     def to_file(self, key, path, buffer_size=1048576):
         """ Efficiently store the data associated with a key into a file.
@@ -577,7 +603,6 @@ class SqliteStore(AbstractStore):
 
         """
         return super(SqliteStore, self).to_file(key, path, buffer_size)
-
 
     def from_file(self, key, path, buffer_size=1048576):
         """ Efficiently read data from a file into a key in the key-value store.
@@ -642,15 +667,15 @@ class SqliteStore(AbstractStore):
         columns = columns if columns is not None else ['metadata', 'data']
 
         # substitution OK, since these values are not user-defined
-        query = 'select %s from "%s" where key == ?' % (', '.join('"'+column+'"'
-            for column in columns), self.table)
-        rows = self._connection.execute(query, (key,)).fetchall()
+        query = 'select %s from "%s" where key == ?' % (', '.join(
+            '"' + column + '"' for column in columns), self.table)
+        rows = self._connection.execute(query, (key, )).fetchall()
 
         # only expect 0 or 1 row, since primary key is unique
         if len(rows) == 0:
             return None
         else:
-            return dict(zip(columns, rows[0]))
+            return dict(list(zip(columns, rows[0])))
 
     def _insert_row(self, key, metadata, data, created, modified):
         """ Insert or replace a row into the underlying sqlite table
@@ -659,7 +684,8 @@ class SqliteStore(AbstractStore):
         sort of transaction control.
         """
         query = 'insert or replace into "%s" (key, metadata, created, modified, data) values (?, ?, ?, ?, ?)' % self.table
-        self._connection.execute(query, (key, metadata, created, modified, data))
+        self._connection.execute(query,
+                                 (key, metadata, created, modified, data))
 
     def _update_column(self, key, column, value):
         """ Update an existing column value in the a row with the given key
@@ -676,16 +702,16 @@ class SqliteStore(AbstractStore):
         This simply constructs and executes the query. It does not attempt any
         sort of transaction control.
         """
-        query = 'update "%s" set %s where key=?' % (self.table,
-            ', '.join('"'+column+'"=?' for column in columns))
-        self._connection.execute(query, tuple(values)+(key,))
+        query = 'update "%s" set %s where key=?' % (
+            self.table, ', '.join('"' + column + '"=?' for column in columns))
+        self._connection.execute(query, tuple(values) + (key, ))
 
     def _update_index(self, key, metadata):
         if not self._index:
             return
         if self._index == 'dynamic':
             missing_columns = set(column for column in metadata
-                if column not in self.index_columns)
+                                  if column not in self.index_columns)
             query1 = 'alter table "%s" add column "%s" blob'
             query2 = 'create index "%s" on "%s" ("%s")'
             for column in missing_columns:
@@ -693,12 +719,18 @@ class SqliteStore(AbstractStore):
                 self._connection.execute(query2 % (column, self.table, column))
             self.index_columns |= missing_columns
 
-        columns = [column for column in metadata if column in self.index_columns]
-        values = [buffer(cPickle.dumps(metadata[column], protocol=2)) for column in columns]
+        columns = [
+            column for column in metadata if column in self.index_columns
+        ]
+        values = [
+            buffer(cPickle.dumps(
+                metadata[column], protocol=2)) for column in columns
+        ]
         if columns:
             self._update_columns(key, columns, values)
 
     def _build_index(self):
-        for row in self._connection.execute('select key, metadata from "%s"' % self.table):
+        for row in self._connection.execute('select key, metadata from "%s"' %
+                                            self.table):
             self._update_index(*row)
             self._commit_transaction()

@@ -9,15 +9,12 @@ from email.utils import parsedate_tz, mktime_tz
 
 from six.moves import urllib
 
-
 from .abstract_store import Value, AuthorizationError
-from .utils import (
-    BufferIteratorIO, buffer_iterator, add_context_manager_support
-)
+from .utils import (BufferIteratorIO, buffer_iterator,
+                    add_context_manager_support)
 
 
 class URLValue(Value):
-
     def __init__(self, url, metadata=None, opener=None):
         self._url = url
         self._metadata = metadata if metadata is not None else {}
@@ -63,9 +60,11 @@ class URLValue(Value):
         # need to build a reqquest with a range header
         start_string = str(start) if start is not None else ''
         end_string = str(end) if end is not None else ''
-        request = urllib.request.Request(self._url, headers={
-            'Range': 'bytes={0}-{1}'.format(start_string, end_string),
-        })
+        request = urllib.request.Request(
+            self._url,
+            headers={
+                'Range': 'bytes={0}-{1}'.format(start_string, end_string),
+            })
 
         stream = self._opener.open(request)
         add_context_manager_support(stream)
@@ -79,9 +78,10 @@ class URLValue(Value):
             else:
                 start = 0
             if end is not None:
-                max_bytes = end-start
-                return BufferIteratorIO(buffer_iterator(stream,
-                                                        max_bytes=max_bytes))
+                max_bytes = end - start
+                return BufferIteratorIO(
+                    buffer_iterator(
+                        stream, max_bytes=max_bytes))
             else:
                 return stream
 

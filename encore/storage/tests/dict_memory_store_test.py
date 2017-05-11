@@ -12,7 +12,6 @@ from ..dict_memory_store import DictMemoryStore
 
 
 class DictMemoryStoreReadTest(TestCase, StoreReadTestMixin):
-    
     def setUp(self):
         """ Set up a data store for the test case
         
@@ -33,26 +32,29 @@ class DictMemoryStoreReadTest(TestCase, StoreReadTestMixin):
         super(DictMemoryStoreReadTest, self).setUp()
         self.store = DictMemoryStore()
         t = time.time()
-        self.store._store['test1'] = (
-            b'test2\n', {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t)
+        self.store._store['test1'] = (b'test2\n', {
+            'a_str': 'test3',
+            'an_int': 1,
+            'a_float': 2.0,
+            'a_bool': True,
+            'a_list': ['one', 'two', 'three'],
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        }, t, t)
         for i in range(10):
             t = time.time()
-            self.store._store['key%d'%i] = (
-                b'value%d' % i, {'query_test1': 'value', 'query_test2': i},
-                t, t)
+            self.store._store['key%d' % i] = (b'value%d' % i, {
+                'query_test1': 'value',
+                'query_test2': i
+            }, t, t)
             if i % 2 == 0:
-                self.store._store['key%d'%i][1]['optional'] = True
+                self.store._store['key%d' % i][1]['optional'] = True
 
 
 class DictMemoryStoreWriteTest(TestCase, StoreWriteTestMixin):
-    
     def setUp(self):
         """ Set up a data store for the test case
         
@@ -71,32 +73,38 @@ class DictMemoryStoreWriteTest(TestCase, StoreWriteTestMixin):
         """
         self.store = DictMemoryStore()
         t = time.time()
-        self.store._store['test1'] = (
-            b'test2\n',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t
-        )
-        for i in range(10):
-            key = 'existing_key'+str(i)
-            data = b'existing_value%i' % i
-            metadata = {'meta': True, 'meta1': -i}
-            t = time.time()
-            self.store._store[key] = (data, metadata, t, t)
-            
-    def test_set_data(self):
-        super(DictMemoryStoreWriteTest, self).test_set_data()
-        # make an additional claim about behaviour of metadata
-        self.assertEqual(self.store.get_metadata('test1'), {
+        self.store._store['test1'] = (b'test2\n', {
             'a_str': 'test3',
             'an_int': 1,
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
-        })
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        }, t, t)
+        for i in range(10):
+            key = 'existing_key' + str(i)
+            data = b'existing_value%i' % i
+            metadata = {'meta': True, 'meta1': -i}
+            t = time.time()
+            self.store._store[key] = (data, metadata, t, t)
+
+    def test_set_data(self):
+        super(DictMemoryStoreWriteTest, self).test_set_data()
+        # make an additional claim about behaviour of metadata
+        self.assertEqual(
+            self.store.get_metadata('test1'), {
+                'a_str': 'test3',
+                'an_int': 1,
+                'a_float': 2.0,
+                'a_bool': True,
+                'a_list': ['one', 'two', 'three'],
+                'a_dict': {
+                    'one': 1,
+                    'two': 2,
+                    'three': 3
+                }
+            })

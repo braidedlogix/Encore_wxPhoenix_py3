@@ -15,7 +15,6 @@
 # and limitations under the License. 
 #
 # From: http://code.activestate.com/recipes/576880/ (r1)
-
 """Module: human_date
 
 This module caters to the need of developers who
@@ -59,8 +58,9 @@ Use, resuse, modify, contribute-back, have Fun!!
 import datetime
 import time
 import logging
-logging.basicConfig(level = logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('parsedatetime')
+
 
 def makeEpochTime(date_time):
     """
@@ -71,11 +71,12 @@ def makeEpochTime(date_time):
     @return:
         seconds_since_epoch:: int 
     """
-    date_time = date_time.isoformat().split('.')[0].replace('T',' ')
+    date_time = date_time.isoformat().split('.')[0].replace('T', ' ')
     #'2009-07-04 18:30:47'
     pattern = '%Y-%m-%d %H:%M:%S'
     seconds_since_epoch = int(time.mktime(time.strptime(date_time, pattern)))
-    return seconds_since_epoch 
+    return seconds_since_epoch
+
 
 def convertToHumanReadable(date_time, utc=False):
     """
@@ -101,28 +102,28 @@ def convertToHumanReadable(date_time, utc=False):
         days = 0
     days, hours, minutes = int(days), int(hours), int(minutes)
     seconds = int(float(seconds))
-    datelets =[]
+    datelets = []
     years, months, xdays = None, None, None
-    plural = lambda x: 's' if x!=1 else ''
+    plural = lambda x: 's' if x != 1 else ''
     if days >= 365:
-        years = int(days/365)
+        years = int(days / 365)
         datelets.append('%d year%s' % (years, plural(years)))
-        days = days%365
+        days = days % 365
     if days >= 30 and days < 365:
-        months = int(days/30)
-        datelets.append('%d month%s' % (months, plural(months)))        
-        days = days%30
+        months = int(days / 30)
+        datelets.append('%d month%s' % (months, plural(months)))
+        days = days % 30
     if not years and days > 0 and days < 30:
-        xdays =days
-        datelets.append('%d day%s' % (xdays, plural(xdays)))        
+        xdays = days
+        datelets.append('%d day%s' % (xdays, plural(xdays)))
     if not (months or years) and hours != 0:
-        datelets.append('%d hour%s' % (hours, plural(hours)))        
+        datelets.append('%d hour%s' % (hours, plural(hours)))
     if not (xdays or months or years) and minutes != 0:
         datelets.append('%d minute%s' % (minutes, plural(minutes)))
     if not (xdays or months or years or hours or minutes):
         datelets.append('%d second%s' % (seconds, plural(seconds)))
     return ', '.join(datelets) + ' ago.'
-    
+
 
 def makeFancyDatetime(req_datetime):
     """
@@ -136,19 +137,21 @@ def makeFancyDatetime(req_datetime):
         Python dictionay object with two key, value pairs
         representing 'fancy_datetime' and 'seconds_since_epoch'
     """
-    return {'fancy_datetime': convertToHumanReadable(req_datetime), 
-            'seconds_since_epoch': makeEpochTime(req_datetime)
-            }
+    return {
+        'fancy_datetime': convertToHumanReadable(req_datetime),
+        'seconds_since_epoch': makeEpochTime(req_datetime)
+    }
+
 
 def test():
     """
     a small set of tests
     """
-    bkwd_date = lambda x: datetime.datetime.now()-datetime.timedelta(seconds = x)
-    siad = 60*60*24
+    bkwd_date = lambda x: datetime.datetime.now() - datetime.timedelta(seconds=x)
+    siad = 60 * 60 * 24
     xs = [456, 365, 232, 23, 12.5, 0.5, 0.3, 0.0003]
     for x in xs:
-        req_datetime = bkwd_date(siad*x)
+        req_datetime = bkwd_date(siad * x)
         log.info("\nINPUT:  %s\nOutput:  %s\n*********" % \
                      (str(req_datetime), str(makeFancyDatetime(req_datetime))))
 

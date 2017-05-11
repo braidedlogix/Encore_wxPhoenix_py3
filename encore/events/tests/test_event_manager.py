@@ -37,16 +37,16 @@ class TestEventManager(unittest.TestCase):
         evt1 = BaseEvent()
         self.evt_mgr.emit(evt1)
         self.assertEqual(callback.call_count, 1)
-        self.assertEqual(callback.call_args, ((evt1,), {}))
+        self.assertEqual(callback.call_args, ((evt1, ), {}))
 
         callback2 = mock.Mock()
         self.evt_mgr.connect(BaseEvent, callback2)
         evt2 = BaseEvent()
         self.evt_mgr.emit(evt2)
         self.assertEqual(callback.call_count, 2)
-        self.assertEqual(callback.call_args, ((evt2,), {}))
+        self.assertEqual(callback.call_args, ((evt2, ), {}))
         self.assertEqual(callback2.call_count, 1)
-        self.assertEqual(callback2.call_args, ((evt2,), {}))
+        self.assertEqual(callback2.call_args, ((evt2, ), {}))
 
         # Exceptions in listeners should still propagate events.
         def callback3(evt):
@@ -69,13 +69,14 @@ class TestEventManager(unittest.TestCase):
         """
         callback = mock.Mock()
         self.evt_mgr.connect(BaseEvent, callback)
-        self.assertEqual(list(self.evt_mgr.get_listeners(BaseEvent)),
-                         [callback])
+        self.assertEqual(
+            list(self.evt_mgr.get_listeners(BaseEvent)), [callback])
 
         callback2 = mock.Mock()
         self.evt_mgr.connect(BaseEvent, callback2)
-        self.assertEqual(list(self.evt_mgr.get_listeners(BaseEvent)),
-                         [callback, callback2])
+        self.assertEqual(
+            list(self.evt_mgr.get_listeners(BaseEvent)),
+            [callback, callback2])
 
     def test_listeners(self):
         """ Test if correct listeners are returned.
@@ -86,29 +87,34 @@ class TestEventManager(unittest.TestCase):
             def __init__(self, name=1):
                 super(MyEvt, self).__init__()
                 self.name = name
+
             def callback_bound(self, evt):
                 pass
+
             def callback_unbound(self):
                 pass
+
         callback = mock.Mock()
         obj = MyEvt()
         self.evt_mgr.connect(BaseEvent, callback)
         self.evt_mgr.connect(MyEvt, MyEvt.callback_unbound)
         self.evt_mgr.connect(MyEvt, obj.callback_bound)
 
-        self.assertEqual(list(self.evt_mgr.get_listeners(MyEvt)),
-                         [callback, MyEvt.callback_unbound, obj.callback_bound])
+        self.assertEqual(
+            list(self.evt_mgr.get_listeners(MyEvt)),
+            [callback, MyEvt.callback_unbound, obj.callback_bound])
 
         callback2 = mock.Mock()
-        self.evt_mgr.connect(BaseEvent, callback2, filter={'name':0})
+        self.evt_mgr.connect(BaseEvent, callback2, filter={'name': 0})
 
         # get listeners with filtering
-        self.assertEqual(list(self.evt_mgr.get_listeners(MyEvt(0))),
-                         [callback, MyEvt.callback_unbound, obj.callback_bound,
-                          callback2])
+        self.assertEqual(
+            list(self.evt_mgr.get_listeners(MyEvt(0))),
+            [callback, MyEvt.callback_unbound, obj.callback_bound, callback2])
 
-        self.assertEqual(list(self.evt_mgr.get_listeners(MyEvt(1))),
-                         [callback, MyEvt.callback_unbound, obj.callback_bound])
+        self.assertEqual(
+            list(self.evt_mgr.get_listeners(MyEvt(1))),
+            [callback, MyEvt.callback_unbound, obj.callback_bound])
 
     def test_disconnect(self):
         """ Test if disconnecting listeners works.
@@ -119,16 +125,17 @@ class TestEventManager(unittest.TestCase):
         evt1 = BaseEvent()
         self.evt_mgr.emit(evt1)
         self.assertEqual(callback.call_count, 1)
-        self.assertEqual(callback.call_args, ((evt1,), {}))
+        self.assertEqual(callback.call_args, ((evt1, ), {}))
 
         self.evt_mgr.disconnect(BaseEvent, callback)
         self.evt_mgr.emit(BaseEvent())
         self.assertEqual(callback.call_count, 1)
-        self.assertEqual(callback.call_args, ((evt1,), {}))
+        self.assertEqual(callback.call_args, ((evt1, ), {}))
 
     def test_disable(self):
         """ Test if temporarily disabling an event works.
         """
+
         class MyEvt(BaseEvent):
             def __init__(self):
                 super(MyEvt, self).__init__()
@@ -142,7 +149,7 @@ class TestEventManager(unittest.TestCase):
         evt1 = BaseEvent()
         self.evt_mgr.emit(evt1)
         self.assertEqual(callback.call_count, 1)
-        self.assertEqual(callback.call_args, ((evt1,), {}))
+        self.assertEqual(callback.call_args, ((evt1, ), {}))
 
         # Disabling BaseEvent.
         self.evt_mgr.disable(BaseEvent)
@@ -187,6 +194,7 @@ class TestEventManager(unittest.TestCase):
     def test_mark_as_handled(self):
         """ Test if mark_as_handled() works.
         """
+
         class MyEvent(BaseEvent):
             def __init__(self, veto=False):
                 super(MyEvent, self).__init__()
@@ -195,6 +203,7 @@ class TestEventManager(unittest.TestCase):
         def callback(evt):
             if evt.veto:
                 evt.mark_as_handled()
+
         callback = mock.Mock(wraps=callback)
         self.evt_mgr.connect(MyEvent, callback, priority=2)
         callback2 = mock.Mock()
@@ -208,16 +217,18 @@ class TestEventManager(unittest.TestCase):
         evt2 = MyEvent(veto=True)
         self.evt_mgr.emit(evt2)
         self.assertEqual(callback.call_count, 2)
-        self.assertEqual(callback.call_args, ((evt2,), {}))
+        self.assertEqual(callback.call_args, ((evt2, ), {}))
         self.assertEqual(callback2.call_count, 1)
-        self.assertEqual(callback2.call_args, ((evt1,), {}))
+        self.assertEqual(callback2.call_args, ((evt1, ), {}))
 
     def test_filtering(self):
         """ Test if event filtering on arguments works.
         """
         depth = 5
+
         class A(object):
             count = depth
+
             def __init__(self):
                 A.count -= 1
                 if A.count:
@@ -234,13 +245,18 @@ class TestEventManager(unittest.TestCase):
 
         callbacks = [mock.Mock() for i in range(8)]
         self.evt_mgr.connect(MyEvent, callbacks[0])
-        self.evt_mgr.connect(MyEvent, callbacks[1], filter={'prop1':'f2'})
-        self.evt_mgr.connect(MyEvent, callbacks[2], filter={'prop2':False})
-        self.evt_mgr.connect(MyEvent, callbacks[3], filter={'prop3':BaseEvent})
-        self.evt_mgr.connect(MyEvent, callbacks[4], filter={'prop1':'f2', 'prop2':False})
-        self.evt_mgr.connect(MyEvent, callbacks[5], filter={'prop1.real':0})
-        self.evt_mgr.connect(MyEvent, callbacks[6], filter={'prop1.a.a.a.a.a':0})
-        self.evt_mgr.connect(MyEvent, callbacks[7], filter={'prop1.a.a.a.a':0})
+        self.evt_mgr.connect(MyEvent, callbacks[1], filter={'prop1': 'f2'})
+        self.evt_mgr.connect(MyEvent, callbacks[2], filter={'prop2': False})
+        self.evt_mgr.connect(
+            MyEvent, callbacks[3], filter={'prop3': BaseEvent})
+        self.evt_mgr.connect(
+            MyEvent, callbacks[4], filter={'prop1': 'f2',
+                                           'prop2': False})
+        self.evt_mgr.connect(MyEvent, callbacks[5], filter={'prop1.real': 0})
+        self.evt_mgr.connect(
+            MyEvent, callbacks[6], filter={'prop1.a.a.a.a.a': 0})
+        self.evt_mgr.connect(
+            MyEvent, callbacks[7], filter={'prop1.a.a.a.a': 0})
 
         def check_count(evt, *counts):
             self.evt_mgr.emit(evt)
@@ -268,13 +284,16 @@ class TestEventManager(unittest.TestCase):
     def test_exception(self):
         """ Test if exception in handler causes subsequent notifications.
         """
+
         class MyEvt(BaseEvent):
             def __init__(self, err=False):
                 super(MyEvt, self).__init__()
                 self.err = err
+
         def callback(evt):
             if evt.err:
                 raise Exception('you did it')
+
         callback = mock.Mock(wraps=callback)
         self.evt_mgr.connect(MyEvt, callback)
         callback2 = mock.Mock()
@@ -291,10 +310,13 @@ class TestEventManager(unittest.TestCase):
     def test_priority(self):
         """ Test if setting priority of handlers works.
         """
+
         class Callback(object):
             calls = []
+
             def __init__(self, name):
                 self.name = name
+
             def __call__(self, evt):
                 self.calls.append(self.name)
 
@@ -323,6 +345,7 @@ class TestEventManager(unittest.TestCase):
                 even when the superclass event is added before/after subclass
             2. superclass event should not notify subclass listeners
         """
+
         class MyEvt(BaseEvent):
             pass
 
@@ -362,35 +385,45 @@ class TestEventManager(unittest.TestCase):
     def test_event_hierarchy(self):
         """ Test whether the correct hierarchy of event classes is returned.
         """
+
         class MyEvt(BaseEvent):
             pass
+
         class MyEvt2(MyEvt):
             pass
+
         class MyEvt3(MyEvt):
             pass
+
         class MyEvt4(MyEvt2, MyEvt3):
             pass
 
-        self.assertEqual(self.evt_mgr.get_event_hierarchy(BaseEvent),
-                         (BaseEvent,))
-        self.assertEqual(self.evt_mgr.get_event_hierarchy(MyEvt),
-                         (MyEvt, BaseEvent))
-        self.assertEqual(self.evt_mgr.get_event_hierarchy(MyEvt2),
-                         (MyEvt2, MyEvt, BaseEvent))
-        self.assertEqual(self.evt_mgr.get_event_hierarchy(MyEvt3),
-                         (MyEvt3, MyEvt, BaseEvent))
-        self.assertEqual(self.evt_mgr.get_event_hierarchy(MyEvt4),
-                         (MyEvt4, MyEvt2, MyEvt3, MyEvt, BaseEvent))
+        self.assertEqual(
+            self.evt_mgr.get_event_hierarchy(BaseEvent), (BaseEvent, ))
+        self.assertEqual(
+            self.evt_mgr.get_event_hierarchy(MyEvt), (MyEvt, BaseEvent))
+        self.assertEqual(
+            self.evt_mgr.get_event_hierarchy(MyEvt2),
+            (MyEvt2, MyEvt, BaseEvent))
+        self.assertEqual(
+            self.evt_mgr.get_event_hierarchy(MyEvt3),
+            (MyEvt3, MyEvt, BaseEvent))
+        self.assertEqual(
+            self.evt_mgr.get_event_hierarchy(MyEvt4),
+            (MyEvt4, MyEvt2, MyEvt3, MyEvt, BaseEvent))
 
     def test_prepost_emit(self):
         """ Test whether pre/post methods of event are called correctly on emit.
         """
         call_seq = []
+
         class MyEvt(BaseEvent):
             def pre_emit(self):
                 call_seq.append(0)
+
             def post_emit(self):
                 call_seq.append(2)
+
         def callback(evt):
             call_seq.append(1)
 
@@ -403,6 +436,7 @@ class TestEventManager(unittest.TestCase):
         """ Test listener is called even if it is disconnected before notify.
         """
         data = []
+
         def callback(evt):
             data.append(0)
             self.evt_mgr.disconnect(BaseEvent, callback2)
@@ -434,6 +468,7 @@ class TestEventManager(unittest.TestCase):
         """ Test if methods do not prevent garbage collection of objects.
         """
         data = []
+
         class MyHeavyObject(object):
             def callback(self, evt):
                 data.append(1)
@@ -453,7 +488,6 @@ class TestEventManager(unittest.TestCase):
         data = []
 
         class MyHeavyObject(BaseEvent):
-
             def callback(self, evt):
                 data.append(1)
 
@@ -472,9 +506,11 @@ class TestEventManager(unittest.TestCase):
         """ Test if object garbage collection disconnects listener method.
         """
         data = []
+
         class MyHeavyObject(object):
             def callback(self, evt):
                 data.append(1)
+
         obj = MyHeavyObject()
         obj_wr = weakref.ref(obj)
         self.evt_mgr.connect(BaseEvent, obj.callback)
@@ -489,9 +525,11 @@ class TestEventManager(unittest.TestCase):
         """ Test if method disconnect works.
         """
         data = []
+
         class MyHeavyObject(object):
             def callback(self, evt):
                 data.append(1)
+
         obj = MyHeavyObject()
         obj_wr = weakref.ref(obj)
         self.evt_mgr.connect(BaseEvent, obj.callback)
@@ -506,11 +544,14 @@ class TestEventManager(unittest.TestCase):
         """ Test if method disconnect on unconnected method fails.
         """
         data = []
+
         class MyHeavyObject(object):
             def callback(self, evt):
                 data.append(1)
+
             def callback2(self, evt):
                 data.append(2)
+
         obj = MyHeavyObject()
         self.evt_mgr.connect(BaseEvent, obj.callback)
         with self.assertRaises(Exception):
@@ -524,11 +565,13 @@ class TestEventManager(unittest.TestCase):
         data = []
         lock = threading.Lock()
         lock.acquire()
+
         def callback(evt):
             # callback will wait until lock is released.
             with lock:
                 data.append('callback')
                 data.append(threading.current_thread().name)
+
         self.evt_mgr.connect(BaseEvent, callback)
 
         t = self.evt_mgr.emit(BaseEvent(), block=False)
@@ -548,8 +591,13 @@ class TestEventManager(unittest.TestCase):
     def test_reentrant_emit(self):
         """ Test if reentrant emit works. """
         data = []
-        class MyEvt(BaseEvent): pass
-        class MyEvt2(BaseEvent): pass
+
+        class MyEvt(BaseEvent):
+            pass
+
+        class MyEvt2(BaseEvent):
+            pass
+
         def callback(evt):
             typ = type(evt)
             data.append(typ)
@@ -566,8 +614,10 @@ class TestEventManager(unittest.TestCase):
     def test_reconnect(self):
         """ Test reconnecting already connected listener. """
         calls = []
+
         def callback1(evt):
             calls.append(1)
+
         def callback2(evt):
             calls.append(2)
 
@@ -598,6 +648,7 @@ class TestEventManager(unittest.TestCase):
 
         self.assertRaises(ValueError, lambda: set_event_manager(evt_mgr))
 
+
 class TracingTests(unittest.TestCase):
     def setUp(self):
         self.evt_mgr = EventManager()
@@ -614,7 +665,8 @@ class TracingTests(unittest.TestCase):
     def trace_func_veto(self, name, method, args):
         """ Trace function to veto actions. """
         self.trace_func(name, method, args)
-        if self.veto_condition is None or self.veto_condition(name, method, args):
+        if self.veto_condition is None or self.veto_condition(name, method,
+                                                              args):
             return True
 
     def test_set_trace(self):
@@ -653,7 +705,7 @@ class TracingTests(unittest.TestCase):
         """ Test whether vetoing of actions works. """
         callback1 = mock.Mock()
         callback2 = mock.Mock()
-        
+
         self.evt_mgr.set_trace(self.trace_func_veto)
         self.evt_mgr.connect(BaseEvent, callback1)
         self.evt_mgr.emit(BaseEvent())

@@ -13,7 +13,6 @@ from ..simple_auth_store import SimpleAuthStore, make_encoder
 
 
 class SimpleAuthStoreReadTest(TestCase, StoreReadTestMixin):
-    
     def setUp(self):
         """ Set up a data store for the test case
         
@@ -36,28 +35,34 @@ class SimpleAuthStoreReadTest(TestCase, StoreReadTestMixin):
         wrapped_store = DictMemoryStore()
         self.store = SimpleAuthStore(wrapped_store, encoder)
         t = time.time()
-        wrapped_store._store['.user_test'] = (encoder(b'test'),  {}, t, t)
+        wrapped_store._store['.user_test'] = (encoder(b'test'), {}, t, t)
         wrapped_store._store['test1'] = (b'test2\n', {
             'a_str': 'test3',
             'an_int': 1,
             'a_float': 2.0,
             'a_bool': True,
             'a_list': ['one', 'two', 'three'],
-            'a_dict': {'one': 1, 'two': 2, 'three': 3}
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
         }, t, t)
         for i in range(10):
             t = time.time()
-            wrapped_store._store['key%d'%i] = (
-                b'value%d' % i, {'query_test1': 'value', 'query_test2': i},
-                t, t)
+            wrapped_store._store['key%d' % i] = (b'value%d' % i, {
+                'query_test1': 'value',
+                'query_test2': i
+            }, t, t)
             if i % 2 == 0:
-                wrapped_store._store['key%d'%i][1]['optional'] = True
-        
-        self.store.connect(credentials={'username': 'test', 'password': 'test'})
+                wrapped_store._store['key%d' % i][1]['optional'] = True
+
+        self.store.connect(
+            credentials={'username': 'test',
+                         'password': 'test'})
 
 
 class SimpleAuthStoreWriteTest(TestCase, StoreWriteTestMixin):
-    
     def setUp(self):
         """ Set up a data store for the test case
         
@@ -78,23 +83,26 @@ class SimpleAuthStoreWriteTest(TestCase, StoreWriteTestMixin):
         wrapped_store = DictMemoryStore()
         self.store = SimpleAuthStore(wrapped_store, encoder)
         t = time.time()
-        wrapped_store._store['.user_test'] = (encoder(b'test'),  {}, t, t)
-        wrapped_store._store['test1'] = (
-            b'test2\n',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t
-        )
+        wrapped_store._store['.user_test'] = (encoder(b'test'), {}, t, t)
+        wrapped_store._store['test1'] = (b'test2\n', {
+            'a_str': 'test3',
+            'an_int': 1,
+            'a_float': 2.0,
+            'a_bool': True,
+            'a_list': ['one', 'two', 'three'],
+            'a_dict': {
+                'one': 1,
+                'two': 2,
+                'three': 3
+            }
+        }, t, t)
         for i in range(10):
-            key = 'existing_key'+str(i)
+            key = 'existing_key' + str(i)
             data = b'existing_value%i' % i
             metadata = {'meta': True, 'meta1': -i}
             t = time.time()
             wrapped_store._store[key] = (data, metadata, t, t)
 
-        self.store.connect(credentials={'username': 'test', 'password': 'test'})
+        self.store.connect(
+            credentials={'username': 'test',
+                         'password': 'test'})

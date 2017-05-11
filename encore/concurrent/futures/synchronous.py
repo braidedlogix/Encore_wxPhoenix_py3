@@ -8,6 +8,7 @@
 
 from concurrent.futures import Executor, Future
 
+
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
         self.future = future
@@ -34,7 +35,7 @@ class SynchronousExecutor(Executor):
     the call is complete.  No cancellation of submitted tasks is possible.
 
     """
-   
+
     def __init__(self):
         """ Initializes a new SynchronousExecutor instance."""
         self._shutdown = False
@@ -46,10 +47,10 @@ class SynchronousExecutor(Executor):
         w = _WorkItem(f, fn, args, kwargs)
         w.run()
         return f
+
     submit.__doc__ = Executor.submit.__doc__
 
     def shutdown(self, wait=True):
         self._shutdown = True
-    shutdown.__doc__ = Executor.shutdown.__doc__
 
-    
+    shutdown.__doc__ = Executor.shutdown.__doc__

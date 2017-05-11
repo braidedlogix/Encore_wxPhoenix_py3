@@ -38,10 +38,10 @@ class BaseEvent(object):
         # The source of the event.
         kwargs['source'] = [] if source is None else source
         self.__dict__.update(**kwargs)
-        
+
         # Whether the event has been handled by a listener.
         self._handled = False
-    
+
     def mark_as_handled(self):
         """ Mark the event as handled so subsequent listeners are not notified.
         """
@@ -61,13 +61,13 @@ class BaseEvent(object):
         """
         pass
 
+
 ###############################################################################
 # `BaseEventManager` Class.
 ###############################################################################
-class BaseEventManager(object):
+class BaseEventManager(object, metaclass=ABCMeta):
     """ This abstract class defines the API for Event Managers.
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def connect(self, cls, func, filter=None, priority=0):
@@ -186,5 +186,6 @@ class BaseEventManager(object):
             The class of events which we want check the status of.
         """
         raise NotImplementedError
+
 
 ###############################################################################

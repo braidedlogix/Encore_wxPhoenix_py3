@@ -10,7 +10,6 @@
 #   CLF: Added 'initializer' and 'uninitializer' arguments to
 #        EnhancedThreadPoolExecutor
 #   CLF: Added 'name' argument to EnhancedThreadPoolExecutor
-
 """Implements EnhancedThreadPoolExecutor.
 
 This builds off of concurrent.futures.thread and implements the following
@@ -32,7 +31,6 @@ in future implementations of concurrent.futures.thread.
 
 """
 
-from __future__ import with_statement
 import atexit
 import itertools
 import threading
@@ -43,7 +41,6 @@ from six.moves import queue
 from concurrent.futures import _base
 
 from .future import Future
-
 
 # Workers are created as daemon threads. This is done to allow the interpreter
 # to exit when there are still idle threads in a ThreadPoolExecutor's thread
@@ -72,6 +69,7 @@ def _python_exit():
     for t, q in items:
         t.join()
 
+
 atexit.register(_python_exit)
 
 
@@ -95,14 +93,14 @@ class _WorkItem(object):
 
 
 def _worker(executor_reference, work_queue, initialize=None,
-        uninitialize=None):
+            uninitialize=None):
 
     if initialize is not None:
         try:
             initialize()
         except BaseException:
-            _base.LOGGER.critical('Initialize exception in worker',
-                    exc_info=True)
+            _base.LOGGER.critical(
+                'Initialize exception in worker', exc_info=True)
 
     try:
         while True:
@@ -129,8 +127,8 @@ def _worker(executor_reference, work_queue, initialize=None,
             try:
                 uninitialize()
             except BaseException:
-                _base.LOGGER.critical('Uninitialize exception in worker',
-                        exc_info=True)
+                _base.LOGGER.critical(
+                    'Uninitialize exception in worker', exc_info=True)
 
 
 class EnhancedThreadPoolExecutor(_base.Executor):
@@ -142,8 +140,12 @@ class EnhancedThreadPoolExecutor(_base.Executor):
     # API.
     _future_factory = Future
 
-    def __init__(self, max_workers, initializer=None, uninitializer=None,
-                 name=None, wait_at_exit=True):
+    def __init__(self,
+                 max_workers,
+                 initializer=None,
+                 uninitializer=None,
+                 name=None,
+                 wait_at_exit=True):
         """Initializes a new EnhancedThreadPoolExecutor instance.
 
         Args:
@@ -183,7 +185,8 @@ class EnhancedThreadPoolExecutor(_base.Executor):
     def submit(self, fn, *args, **kwargs):
         with self._shutdown_lock:
             if self._shutdown:
-                raise RuntimeError('cannot schedule new futures after shutdown')
+                raise RuntimeError(
+                    'cannot schedule new futures after shutdown')
 
             f = self._future_factory()
             w = _WorkItem(f, fn, args, kwargs)
@@ -191,6 +194,7 @@ class EnhancedThreadPoolExecutor(_base.Executor):
             self._work_queue.put(w)
             self._adjust_thread_count()
             return f
+
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):
@@ -202,11 +206,11 @@ class EnhancedThreadPoolExecutor(_base.Executor):
         if len(self._threads) < self._max_workers:
             thread_name = "{0}Worker-{1}".format(self.name,
                                                  next(self._thread_counter))
-            t = threading.Thread(target=_worker, name=thread_name,
-                                 args=(weakref.ref(self, weakref_cb),
-                                       self._work_queue,
-                                       self._initializer,
-                                       self._uninitializer))
+            t = threading.Thread(
+                target=_worker,
+                name=thread_name,
+                args=(weakref.ref(self, weakref_cb), self._work_queue,
+                      self._initializer, self._uninitializer))
             t.daemon = True
             t.start()
             self._threads.add(t)
@@ -220,6 +224,7 @@ class EnhancedThreadPoolExecutor(_base.Executor):
         if wait:
             for t in self._threads:
                 t.join()
+
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
     def map(self, fn, *iterables, **kwargs):
@@ -260,4 +265,5 @@ class EnhancedThreadPoolExecutor(_base.Executor):
             finally:
                 for future in fs:
                     future.cancel()
+
         return result_iterator()

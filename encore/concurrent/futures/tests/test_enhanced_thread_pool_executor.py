@@ -10,8 +10,8 @@ import weakref
 from six.moves import xrange
 
 from concurrent import futures
-from concurrent.futures._base import (
-    PENDING, RUNNING, CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, Future)
+from concurrent.futures._base import (PENDING, RUNNING, CANCELLED,
+                                      CANCELLED_AND_NOTIFIED, FINISHED, Future)
 
 from encore.concurrent.futures.enhanced_thread_pool_executor import \
         EnhancedThreadPoolExecutor
@@ -24,6 +24,7 @@ def create_future(state=PENDING, exception=None, result=None):
     f._exception = exception
     f._result = result
     return f
+
 
 PENDING_FUTURE = create_future(state=PENDING)
 RUNNING_FUTURE = create_future(state=RUNNING)
@@ -66,8 +67,10 @@ class ExecutorMixin(object):
     def _prime_executor(self):
         # Make sure that the executor is ready to do work before running the
         # tests. This should reduce the probability of timeouts in the tests.
-        futures_ = [self.executor.submit(time.sleep, 0.1)
-                   for _ in range(self.worker_count)]
+        futures_ = [
+            self.executor.submit(time.sleep, 0.1)
+            for _ in range(self.worker_count)
+        ]
 
         for f in futures_:
             f.result()
@@ -85,7 +88,8 @@ class CustomThreadPoolExecutor(EnhancedThreadPoolExecutor):
     _future_factory = CustomFuture
 
 
-class EnhancedThreadPoolShutdownTest(EnhancedThreadPoolMixin, unittest.TestCase):
+class EnhancedThreadPoolShutdownTest(EnhancedThreadPoolMixin,
+                                     unittest.TestCase):
     def _prime_executor(self):
         pass
 
@@ -101,15 +105,16 @@ class EnhancedThreadPoolShutdownTest(EnhancedThreadPoolMixin, unittest.TestCase)
     def test_context_manager_shutdown(self):
         with EnhancedThreadPoolExecutor(max_workers=5) as e:
             executor = e
-            self.assertEqual(list(e.map(abs, range(-5, 5))),
-                             [5, 4, 3, 2, 1, 0, 1, 2, 3, 4])
+            self.assertEqual(
+                list(e.map(abs, list(range(-5, 5)))),
+                [5, 4, 3, 2, 1, 0, 1, 2, 3, 4])
 
         for t in executor._threads:
             t.join()
 
     def test_del_shutdown(self):
         executor = EnhancedThreadPoolExecutor(max_workers=5)
-        executor.map(abs, range(-5, 5))
+        executor.map(abs, list(range(-5, 5)))
         threads = executor._threads
         del executor
 
@@ -118,13 +123,13 @@ class EnhancedThreadPoolShutdownTest(EnhancedThreadPoolMixin, unittest.TestCase)
 
     def test_run_after_shutdown(self):
         self.executor.shutdown()
-        self.assertRaises(RuntimeError,
-                          self.executor.submit,
-                          pow, 2, 5)
+        self.assertRaises(RuntimeError, self.executor.submit, pow, 2, 5)
 
     def test_interpreter_shutdown(self):
         # Test the atexit hook for shutdown of worker threads and processes
-        rc, out, err = assert_python_ok('-c', """from __future__ import print_function
+        rc, out, err = assert_python_ok(
+            '-c',
+            """from __future__ import print_function
 if 1:
     from encore.concurrent.futures.enhanced_thread_pool_executor import EnhancedThreadPoolExecutor
     from time import sleep
@@ -149,7 +154,6 @@ if 1:
 
 
 class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
-
     def test_pending_calls_race(self):
         # Issue #14406: multi-threaded race condition when waiting on all
         # futures.
@@ -167,8 +171,8 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future2 = self.executor.submit(time.sleep, 1.5)
 
         done, not_done = futures.wait(
-                [CANCELLED_FUTURE, future1, future2],
-                 return_when=futures.FIRST_COMPLETED)
+            [CANCELLED_FUTURE, future1, future2],
+            return_when=futures.FIRST_COMPLETED)
 
         self.assertEqual(set([future1]), done)
         self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
@@ -177,12 +181,11 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future1 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
-                 [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
-                 return_when=futures.FIRST_COMPLETED)
+            [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
+            return_when=futures.FIRST_COMPLETED)
 
         self.assertEqual(
-                set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]),
-                finished)
+            set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]), finished)
         self.assertEqual(set([future1]), pending)
 
     def test_first_exception(self):
@@ -191,8 +194,7 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future3 = self.executor.submit(time.sleep, 3)
 
         finished, pending = futures.wait(
-                [future1, future2, future3],
-                return_when=futures.FIRST_EXCEPTION)
+            [future1, future2, future3], return_when=futures.FIRST_EXCEPTION)
 
         self.assertEqual(set([future1, future2]), finished)
         self.assertEqual(set([future3]), pending)
@@ -202,23 +204,22 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future2 = self.executor.submit(time.sleep, 1.5)
 
         finished, pending = futures.wait(
-                [SUCCESSFUL_FUTURE,
-                 CANCELLED_FUTURE,
-                 CANCELLED_AND_NOTIFIED_FUTURE,
-                 future1, future2],
-                return_when=futures.FIRST_EXCEPTION)
+            [
+                SUCCESSFUL_FUTURE, CANCELLED_FUTURE,
+                CANCELLED_AND_NOTIFIED_FUTURE, future1, future2
+            ],
+            return_when=futures.FIRST_EXCEPTION)
 
-        self.assertEqual(set([SUCCESSFUL_FUTURE,
-                              CANCELLED_AND_NOTIFIED_FUTURE,
-                              future1]), finished)
+        self.assertEqual(
+            set([SUCCESSFUL_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE, future1]),
+            finished)
         self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
 
     def test_first_exception_one_already_failed(self):
         future1 = self.executor.submit(time.sleep, 2)
 
         finished, pending = futures.wait(
-                 [EXCEPTION_FUTURE, future1],
-                 return_when=futures.FIRST_EXCEPTION)
+            [EXCEPTION_FUTURE, future1], return_when=futures.FIRST_EXCEPTION)
 
         self.assertEqual(set([EXCEPTION_FUTURE]), finished)
         self.assertEqual(set([future1]), pending)
@@ -228,18 +229,17 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future2 = self.executor.submit(mul, 2, 21)
 
         finished, pending = futures.wait(
-                [SUCCESSFUL_FUTURE,
-                 CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 future1,
-                 future2],
-                return_when=futures.ALL_COMPLETED)
+            [
+                SUCCESSFUL_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE,
+                EXCEPTION_FUTURE, future1, future2
+            ],
+            return_when=futures.ALL_COMPLETED)
 
-        self.assertEqual(set([SUCCESSFUL_FUTURE,
-                              CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              future1,
-                              future2]), finished)
+        self.assertEqual(
+            set([
+                SUCCESSFUL_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE,
+                EXCEPTION_FUTURE, future1, future2
+            ]), finished)
         self.assertEqual(set(), pending)
 
     def test_timeout(self):
@@ -247,60 +247,61 @@ class EnhancedThreadPoolWaitTests(EnhancedThreadPoolMixin, unittest.TestCase):
         future2 = self.executor.submit(time.sleep, 6)
 
         finished, pending = futures.wait(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2],
-                timeout=5,
-                return_when=futures.ALL_COMPLETED)
+            [
+                CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                SUCCESSFUL_FUTURE, future1, future2
+            ],
+            timeout=5,
+            return_when=futures.ALL_COMPLETED)
 
-        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE,
-                              future1]), finished)
+        self.assertEqual(
+            set([
+                CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                SUCCESSFUL_FUTURE, future1
+            ]), finished)
         self.assertEqual(set([future2]), pending)
 
 
-class EnhancedThreadPoolAsCompletedTests(EnhancedThreadPoolMixin, unittest.TestCase):
-
+class EnhancedThreadPoolAsCompletedTests(EnhancedThreadPoolMixin,
+                                         unittest.TestCase):
     def test_no_timeout(self):
         future1 = self.executor.submit(mul, 2, 21)
         future2 = self.executor.submit(mul, 7, 6)
 
-        completed = set(futures.as_completed(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2]))
-        self.assertEqual(set(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future1, future2]),
-                completed)
+        completed = set(
+            futures.as_completed([
+                CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                SUCCESSFUL_FUTURE, future1, future2
+            ]))
+        self.assertEqual(
+            set([
+                CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                SUCCESSFUL_FUTURE, future1, future2
+            ]), completed)
 
     def test_zero_timeout(self):
         future1 = self.executor.submit(time.sleep, 2)
         completed_futures = set()
         try:
             for future in futures.as_completed(
-                    [CANCELLED_AND_NOTIFIED_FUTURE,
-                     EXCEPTION_FUTURE,
-                     SUCCESSFUL_FUTURE,
-                     future1],
+                [
+                    CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                    SUCCESSFUL_FUTURE, future1
+                ],
                     timeout=0):
                 completed_futures.add(future)
         except futures.TimeoutError:
             pass
 
-        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE]),
-                         completed_futures)
+        self.assertEqual(
+            set([
+                CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
+                SUCCESSFUL_FUTURE
+            ]), completed_futures)
 
 
-class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase):
-
+class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin,
+                                     unittest.TestCase):
     def test_map_submits_without_iteration(self):
         """Tests verifying issue 11777."""
         self.finished = set()
@@ -308,7 +309,7 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
         def record_finished(n):
             self.finished.add(n)
 
-        self.executor.map(record_finished, range(10))
+        self.executor.map(record_finished, list(range(10)))
         self.executor.shutdown(wait=True)
         self.assertEqual(self.finished, set(range(10)))
 
@@ -322,8 +323,8 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
 
     def test_map(self):
         self.assertEqual(
-                list(self.executor.map(pow, range(10), range(10))),
-                list(map(pow, range(10), range(10))))
+            list(self.executor.map(pow, list(range(10)), list(range(10)))),
+            list(map(pow, list(range(10)), list(range(10)))))
 
     def test_map_exception(self):
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
@@ -335,9 +336,7 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
     def test_map_timeout(self):
         results = []
         try:
-            for i in self.executor.map(time.sleep,
-                                       [0, 0, 6],
-                                       timeout=5):
+            for i in self.executor.map(time.sleep, [0, 0, 6], timeout=5):
                 results.append(i)
         except futures.TimeoutError:
             pass
@@ -358,8 +357,8 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
         # references.
         my_object = MyObject()
         my_object_collected = threading.Event()
-        my_object_callback = weakref.ref(
-            my_object, lambda obj: my_object_collected.set())
+        my_object_callback = weakref.ref(my_object,
+                                         lambda obj: my_object_collected.set())
         # Deliberately discarding the future.
         self.executor.submit(my_object.my_method)
         del my_object
@@ -373,7 +372,7 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
         executor = EnhancedThreadPoolExecutor(max_workers=5)
         with executor as e:
             # Start some threads.
-            for _ in xrange(10):
+            for _ in range(10):
                 e.submit(pow, 2, 2)
             expected_prefix = "{0}Worker-".format(type(e).__name__)
             for t in e._threads:
@@ -387,12 +386,12 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
                     thread_names))
 
         # Executor with explicit name.
-        executor = EnhancedThreadPoolExecutor(max_workers=5,
-                                              name="DeadParrotExecutioner")
+        executor = EnhancedThreadPoolExecutor(
+            max_workers=5, name="DeadParrotExecutioner")
         with executor as e:
             self.assertEqual(e.name, "DeadParrotExecutioner")
             # Start some threads.
-            for _ in xrange(10):
+            for _ in range(10):
                 e.submit(pow, 2, 2)
             expected_prefix = "DeadParrotExecutionerWorker-"
             for t in e._threads:
@@ -418,7 +417,6 @@ class EnhancedThreadPoolExecutorTest(EnhancedThreadPoolMixin, unittest.TestCase)
 
 
 class EnhancedThreadPoolExecutorInitUninit(unittest.TestCase):
-
     def test_initialize(self):
         num_workers = 5
         self.artifacts = []
@@ -426,7 +424,8 @@ class EnhancedThreadPoolExecutorInitUninit(unittest.TestCase):
         def initialize():
             self.artifacts.append(None)
 
-        executor = EnhancedThreadPoolExecutor(num_workers, initializer=initialize)
+        executor = EnhancedThreadPoolExecutor(
+            num_workers, initializer=initialize)
 
         _start_all_threads(executor, num_workers)
 
@@ -440,7 +439,8 @@ class EnhancedThreadPoolExecutorInitUninit(unittest.TestCase):
         def uninitialize():
             self.artifacts.append(None)
 
-        executor = EnhancedThreadPoolExecutor(num_workers, uninitializer=uninitialize)
+        executor = EnhancedThreadPoolExecutor(
+            num_workers, uninitializer=uninitialize)
 
         _start_all_threads(executor, num_workers)
 
@@ -478,14 +478,12 @@ class EnhancedThreadPoolWaitAtExit(unittest.TestCase):
 
 
 class TestCustomFuture(unittest.TestCase):
-
     def test_custom_future(self):
         num_workers = 5
         executor = CustomThreadPoolExecutor(num_workers)
         futures_ = _start_all_threads(executor, num_workers)
         self.assertTrue(
-            all(isinstance(future_, CustomFuture) for future_ in futures_)
-        )
+            all(isinstance(future_, CustomFuture) for future_ in futures_))
 
 
 def _start_all_threads(executor, num_workers):
@@ -494,8 +492,7 @@ def _start_all_threads(executor, num_workers):
     lock = threading.Lock()
     futures_ = []
     for i in range(num_workers):
-        future = executor.submit(
-            _wait_for_counter, counter, lock, num_workers)
+        future = executor.submit(_wait_for_counter, counter, lock, num_workers)
         futures_.append(future)
     futures.wait(futures_)
     return futures_

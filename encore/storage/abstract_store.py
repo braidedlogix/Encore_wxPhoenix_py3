@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Key-Value Store API
 ===================
@@ -29,17 +28,19 @@ import warnings
 
 from encore.events.api import get_event_manager
 
-from .utils import (
-    StoreProgressManager, buffer_iterator, add_context_manager_support
-)
+from .utils import (StoreProgressManager, buffer_iterator,
+                    add_context_manager_support)
+
 
 class StoreError(RuntimeError):
     pass
 
+
 class AuthorizationError(StoreError):
     pass
 
-class Value(object):
+
+class Value(object, metaclass=ABCMeta):
     """ Abstract base class for file-like objects used by Key-Value stores
 
     Attributes
@@ -55,7 +56,6 @@ class Value(object):
         after the Unix Epoch.
 
     """
-    __metaclass__ = ABCMeta
 
     @abstractproperty
     def data(self):
@@ -122,7 +122,8 @@ class Value(object):
         This functionality will be removed before the 1.0 release
 
         """
-        warnings.warn('The 2-tuple interface for storage values is deprecated', DeprecationWarning)
+        warnings.warn('The 2-tuple interface for storage values is deprecated',
+                      DeprecationWarning)
         if idx == 0:
             return self.data
         elif idx == 1:
@@ -131,7 +132,7 @@ class Value(object):
             raise IndexError(idx)
 
 
-class AbstractReadOnlyStore(object):
+class AbstractReadOnlyStore(object, metaclass=ABCMeta):
     """ Abstract base class for read-only Key-Value Store API
 
     This class implements some of the API so that it can be used with super()
@@ -144,7 +145,6 @@ class AbstractReadOnlyStore(object):
         implements the :py:class:`~.abstract_event_manager.BaseEventManager` API.
 
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def __init__(self):
@@ -175,7 +175,6 @@ class AbstractReadOnlyStore(object):
         """
         self._connected = True
 
-
     @abstractmethod
     def disconnect(self):
         """ Disconnect from the key-value store
@@ -184,7 +183,6 @@ class AbstractReadOnlyStore(object):
         store requires.
         """
         self._connected = False
-
 
     @abstractmethod
     def is_connected(self):
@@ -197,7 +195,6 @@ class AbstractReadOnlyStore(object):
 
         """
         return self._connected
-
 
     @abstractmethod
     def info(self):
@@ -212,7 +209,6 @@ class AbstractReadOnlyStore(object):
             'readonly': True,
             'authorizing': False,
         }
-
 
     ##########################################################################
     # Basic Create/Read/Update/Delete Methods
@@ -242,7 +238,6 @@ class AbstractReadOnlyStore(object):
         """
         raise NotImplementedError
 
-
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
 
@@ -265,7 +260,6 @@ class AbstractReadOnlyStore(object):
 
         """
         return self.get(key).data
-
 
     def get_data_range(self, key, start=None, end=None):
         """ Retrieve a partial stream from a given key in the key-value store.
@@ -296,7 +290,6 @@ class AbstractReadOnlyStore(object):
         """
         return self.get(key).range(start, end)
 
-
     def get_metadata(self, key, select=None):
         """ Retrieve the metadata for a given key in the key-value store.
 
@@ -325,10 +318,10 @@ class AbstractReadOnlyStore(object):
         """
         metadata = self.get(key).metadata
         if select is not None:
-            return dict((key, metadata[key]) for key in select if key in metadata)
+            return dict((key, metadata[key]) for key in select
+                        if key in metadata)
         else:
             return metadata
-
 
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
@@ -351,7 +344,6 @@ class AbstractReadOnlyStore(object):
             return False
         else:
             return True
-
 
     ##########################################################################
     # Multiple-key Methods
@@ -380,7 +372,6 @@ class AbstractReadOnlyStore(object):
         for key in keys:
             yield self.get(key)
 
-
     def multiget_data(self, keys):
         """ Retrieve the data for a collection of keys.
 
@@ -403,7 +394,6 @@ class AbstractReadOnlyStore(object):
         """
         for key in keys:
             yield self.get_data(key)
-
 
     def multiget_metadata(self, keys, select=None):
         """ Retrieve the metadata for a collection of keys in the key-value store.
@@ -433,7 +423,6 @@ class AbstractReadOnlyStore(object):
         """
         for key in keys:
             yield self.get_metadata(key, select)
-
 
     ##########################################################################
     # Querying Methods
@@ -468,7 +457,6 @@ class AbstractReadOnlyStore(object):
         """
         raise NotImplementedError
 
-
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
 
@@ -494,7 +482,6 @@ class AbstractReadOnlyStore(object):
         """
         return (key for key, value in self.query(**kwargs))
 
-
     def glob(self, pattern):
         """ Return keys which match glob-style patterns
 
@@ -512,7 +499,6 @@ class AbstractReadOnlyStore(object):
         for key in self.query_keys():
             if fnmatch.fnmatchcase(key, pattern):
                 yield key
-
 
     ##########################################################################
     # Utility Methods
@@ -554,18 +540,21 @@ class AbstractReadOnlyStore(object):
         with open(path, 'wb') as fp:
             data, metadata = self.get(key)
             bytes_written = 0
-            with StoreProgressManager(self.event_manager, self, None,
-                    "Saving key '%s' to file '%s'" % (key, path), -1,
-                    key=key, metadata=metadata) as progress:
+            with StoreProgressManager(
+                    self.event_manager,
+                    self,
+                    None,
+                    "Saving key '%s' to file '%s'" % (key, path),
+                    -1,
+                    key=key,
+                    metadata=metadata) as progress:
                 with data:
                     for buffer in buffer_iterator(data, buffer_size):
                         fp.write(buffer)
                         bytes_written += len(buffer)
                         progress(
-                            "Saving key '%s' to file '%s' (%d bytes written)"
-                            % (key, path, bytes_written)
-                        )
-
+                            "Saving key '%s' to file '%s' (%d bytes written)" %
+                            (key, path, bytes_written))
 
     def to_bytes(self, key, buffer_size=1048576):
         """ Efficiently store the data associated with a key into a bytes object.
@@ -610,7 +599,7 @@ class AbstractReadOnlyStore(object):
             data_fh.close()
 
 
-class AbstractStore(AbstractReadOnlyStore):
+class AbstractStore(AbstractReadOnlyStore, metaclass=ABCMeta):
     """ Abstract base class for Key-Value Store API
 
     This class implements some of the API so that it can be used with super()
@@ -623,8 +612,6 @@ class AbstractStore(AbstractReadOnlyStore):
         implements the :py:class:`~.abstract_event_manager.BaseEventManager` API.
 
     """
-    __metaclass__ = ABCMeta
-
 
     @abstractmethod
     def info(self):
@@ -688,7 +675,6 @@ class AbstractStore(AbstractReadOnlyStore):
             self.set_metadata(key, metadata)
             self.set_data(key, data, buffer_size)
 
-
     @abstractmethod
     def delete(self, key):
         """ Delete a key from the repsository.
@@ -710,7 +696,6 @@ class AbstractStore(AbstractReadOnlyStore):
 
         """
         raise NotImplementedError
-
 
     @abstractmethod
     def set_data(self, key, data, buffer_size=1048576):
@@ -747,7 +732,6 @@ class AbstractStore(AbstractReadOnlyStore):
         """
         raise NotImplementedError
 
-
     @abstractmethod
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
@@ -773,7 +757,6 @@ class AbstractStore(AbstractReadOnlyStore):
         """
         raise NotImplementedError
 
-
     @abstractmethod
     def update_metadata(self, key, metadata):
         """ Update the metadata for a given key in the key-value store.
@@ -798,7 +781,6 @@ class AbstractStore(AbstractReadOnlyStore):
 
         """
         raise NotImplementedError
-
 
     ##########################################################################
     # Multiple-key Methods
@@ -842,10 +824,10 @@ class AbstractStore(AbstractReadOnlyStore):
             emitted with the key & metadata for each key that was set.
 
         """
-        with self.transaction('Setting '+', '.join('"%s"' % key for key in keys)):
-            for key, value in izip(keys, values):
+        with self.transaction('Setting ' + ', '.join('"%s"' % key
+                                                     for key in keys)):
+            for key, value in zip(keys, values):
                 self.set(key, value, buffer_size)
-
 
     def multiset_data(self, keys, datas, buffer_size=1048576):
         """ Set the data for a collection of keys.
@@ -885,10 +867,10 @@ class AbstractStore(AbstractReadOnlyStore):
             emitted with the key & metadata for each key that was set.
 
         """
-        with self.transaction('Setting data for '+', '.join('"%s"' % key for key in keys)):
-            for key, data in izip(keys, datas):
+        with self.transaction('Setting data for ' + ', '.join(
+                '"%s"' % key for key in keys)):
+            for key, data in zip(keys, datas):
                 self.set_data(key, data, buffer_size)
-
 
     def multiset_metadata(self, keys, metadatas):
         """ Set the metadata for a collection of keys.
@@ -915,10 +897,10 @@ class AbstractStore(AbstractReadOnlyStore):
             emitted with the key & metadata for each key that was set.
 
         """
-        with self.transaction('Setting metadata for '+', '.join('"%s"' % key for key in keys)):
-            for key, metadata in izip(keys, metadatas):
+        with self.transaction('Setting metadata for ' + ', '.join(
+                '"%s"' % key for key in keys)):
+            for key, metadata in zip(keys, metadatas):
                 self.set_metadata(key, metadata)
-
 
     def multiupdate_metadata(self, keys, metadatas):
         """ Update the metadata for a collection of keys.
@@ -945,10 +927,10 @@ class AbstractStore(AbstractReadOnlyStore):
             emitted with the key & metadata for each key that was set.
 
         """
-        with self.transaction('Updating metadata for '+', '.join('"%s"' % key for key in keys)):
-            for key, metadata in izip(keys, metadatas):
+        with self.transaction('Updating metadata for ' + ', '.join(
+                '"%s"' % key for key in keys)):
+            for key, metadata in zip(keys, metadatas):
                 self.update_metadata(key, metadata)
-
 
     ##########################################################################
     # Transaction Methods
@@ -1011,7 +993,6 @@ class AbstractStore(AbstractReadOnlyStore):
         """
         raise NotImplementedError
 
-
     ##########################################################################
     # Utility Methods
     ##########################################################################
@@ -1043,7 +1024,6 @@ class AbstractStore(AbstractReadOnlyStore):
         with open(path, 'rb') as fp:
             self.set_data(key, fp, buffer_size=buffer_size)
 
-
     def from_bytes(self, key, data, buffer_size=1048576):
         """ Efficiently store a bytes object as the data associated with a key.
 
@@ -1065,10 +1045,11 @@ class AbstractStore(AbstractReadOnlyStore):
             default if they need to.  The default is 1048576 bytes (1 MiB).
 
         """
-        self.set_data(key, add_context_manager_support(BytesIO(data)), buffer_size)
+        self.set_data(key,
+                      add_context_manager_support(BytesIO(data)), buffer_size)
 
 
-class AbstractAuthorizingStore(AbstractStore):
+class AbstractAuthorizingStore(AbstractStore, metaclass=ABCMeta):
     """ Abstract base class for Key-Value Store API with permissioning
 
     This class implements some of the API so that it can be used with super()
@@ -1092,7 +1073,6 @@ class AbstractAuthorizingStore(AbstractStore):
         implements the :py:class:`~.abstract_event_manager.BaseEventManager` API.
 
     """
-    __metaclass__ = ABCMeta
 
     @abstractmethod
     def info(self):

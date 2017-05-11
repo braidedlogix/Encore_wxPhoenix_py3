@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Memory Store
 ------------
@@ -22,10 +21,8 @@ import time
 
 from .abstract_store import AbstractStore
 from .string_value import StringValue
-from .utils import (
-    buffer_iterator, DummyTransactionContext, StoreProgressManager,
-    add_context_manager_support
-)
+from .utils import (buffer_iterator, DummyTransactionContext,
+                    StoreProgressManager, add_context_manager_support)
 from .events import StoreUpdateEvent, StoreSetEvent, StoreDeleteEvent
 
 
@@ -45,11 +42,11 @@ class DictMemoryStore(AbstractStore):
         An object which implements the :py:class:`~.abstract_event_manager.BaseEventManager` API.
 
     """
-    
+
     def __init__(self):
         super(DictMemoryStore, self).__init__()
         self._store = {}
-    
+
     def connect(self, credentials=None):
         """ Connect to the key-value store
         
@@ -61,8 +58,7 @@ class DictMemoryStore(AbstractStore):
 
         """
         self._connected = True
-    
-    
+
     def disconnect(self):
         """ Disconnect from the key-value store
         
@@ -71,7 +67,6 @@ class DictMemoryStore(AbstractStore):
 
         """
         self._connected = False
-
 
     def is_connected(self):
         """ Whether or not the store is currently connected
@@ -84,7 +79,6 @@ class DictMemoryStore(AbstractStore):
         """
         return self._connected
 
-    
     def info(self):
         """ Get information about the key-value store
         
@@ -94,11 +88,8 @@ class DictMemoryStore(AbstractStore):
             A dictionary of metadata giving information about the key-value store.
 
         """
-        return {
-            'readonly': False
-        }
-    
-    
+        return {'readonly': False}
+
     def get(self, key):
         """ Retrieve a stream of data and metdata from a given key in the key-value store.
         
@@ -123,8 +114,7 @@ class DictMemoryStore(AbstractStore):
 
         """
         return StringValue(*self._store[key])
-    
-    
+
     def set(self, key, value, buffer_size=1048576):
         """ Store a stream of data into a given key in the key-value store.
         
@@ -170,10 +160,13 @@ class DictMemoryStore(AbstractStore):
             metadata = value.metadata
             steps = value.size
 
-        progress = StoreProgressManager(source=self, steps=steps,
-                message="Setting data into '%s'" % (key,), key=key,
-                metadata=metadata)
-                
+        progress = StoreProgressManager(
+            source=self,
+            steps=steps,
+            message="Setting data into '%s'" % (key, ),
+            key=key,
+            metadata=metadata)
+
         with progress:
             chunks = buffer_iterator(data_stream, buffer_size, progress)
             data = b''.join(chunks)
@@ -184,14 +177,15 @@ class DictMemoryStore(AbstractStore):
             else:
                 created = modified = time.time()
             self._store[key] = (data, metadata, created, modified)
-        
-        if update:
-            self.event_manager.emit(StoreUpdateEvent(self, key=key,
-                metadata=metadata))
-        else:
-            self.event_manager.emit(StoreSetEvent(self, key=key,
-                metadata=metadata))
 
+        if update:
+            self.event_manager.emit(
+                StoreUpdateEvent(
+                    self, key=key, metadata=metadata))
+        else:
+            self.event_manager.emit(
+                StoreSetEvent(
+                    self, key=key, metadata=metadata))
 
     def delete(self, key):
         """ Delete a key from the repsository.
@@ -211,10 +205,10 @@ class DictMemoryStore(AbstractStore):
         """
         metadata = self._store[key][1]
         del self._store[key]
-        self.event_manager.emit(StoreDeleteEvent(self, key=key,
-            metadata=metadata))
-    
-    
+        self.event_manager.emit(
+            StoreDeleteEvent(
+                self, key=key, metadata=metadata))
+
     def exists(self, key):
         """ Test whether or not a key exists in the key-value store
         
@@ -231,7 +225,6 @@ class DictMemoryStore(AbstractStore):
         
         """
         return key in self._store
-
 
     def get_data(self, key):
         """ Retrieve a stream from a given key in the key-value store.
@@ -250,7 +243,6 @@ class DictMemoryStore(AbstractStore):
 
         """
         return add_context_manager_support(BytesIO(self._store[key][0]))
-
 
     def get_metadata(self, key, select=None):
         """ Retrieve the metadata for a given key in the key-value store.
@@ -281,10 +273,9 @@ class DictMemoryStore(AbstractStore):
         metadata = self._store[key][1]
         if select is not None:
             return dict((metadata_key, metadata[metadata_key])
-                for metadata_key in select if metadata_key in metadata)
+                        for metadata_key in select if metadata_key in metadata)
         return metadata.copy()
-    
-    
+
     def set_data(self, key, data, buffer_size=1048576):
         """ Replace the data for a given key in the key-value store.
         
@@ -323,7 +314,6 @@ class DictMemoryStore(AbstractStore):
         metadata = self._store.get(key, (None, {}))[1]
         self.set(key, (data, metadata))
 
-        
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
         
@@ -350,7 +340,6 @@ class DictMemoryStore(AbstractStore):
         data = self._store.get(key, (b'', {}))[0]
         self.set(key, StringValue(data=data, metadata=metadata))
 
-
     def update_metadata(self, key, metadata):
         """ Update the metadata for a given key in the key-value store.
         
@@ -374,8 +363,7 @@ class DictMemoryStore(AbstractStore):
 
         """
         self._store[key][1].update(metadata)
-   
-      
+
     def transaction(self, notes):
         """ Provide a transaction context manager
         
@@ -389,7 +377,6 @@ class DictMemoryStore(AbstractStore):
 
         """
         return DummyTransactionContext(self)
-
 
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
@@ -416,18 +403,22 @@ class DictMemoryStore(AbstractStore):
         
         """
         if select is not None:
-            for key, value in self._store.items():
+            for key, value in list(self._store.items()):
                 metadata = value[1]
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key, dict((metadata_key, metadata[metadata_key])
-                        for metadata_key in select if metadata_key in metadata)
+                                    for metadata_key in select
+                                    if metadata_key in metadata)
         else:
-            for key, value in self._store.items():
+            for key, value in list(self._store.items()):
                 metadata = value[1]
-                if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+                if all(
+                        metadata.get(arg) == value
+                        for arg, value in list(kwargs.items())):
                     yield key, metadata.copy()
-    
-    
+
     def query_keys(self, **kwargs):
         """ Query for keys matching metadata provided as keyword arguments
         
@@ -451,12 +442,13 @@ class DictMemoryStore(AbstractStore):
             specified values for the specified metadata keywords.
         
         """
-        for key, value in self._store.items():
+        for key, value in list(self._store.items()):
             metadata = value[1]
-            if all(metadata.get(arg) == value for arg, value in kwargs.items()):
+            if all(
+                    metadata.get(arg) == value
+                    for arg, value in list(kwargs.items())):
                 yield key
 
-        
     def to_file(self, key, path, buffer_size=1048576):
         """ Efficiently store the data associated with a key into a file.
         
@@ -473,8 +465,7 @@ class DictMemoryStore(AbstractStore):
         """
         with open(path, 'wb') as fp:
             fp.write(self._store[key][0])
-    
-    
+
     def from_file(self, key, path, buffer_size=1048576):
         """ Efficiently read data from a file into a key in the key-value store.
         
@@ -507,7 +498,7 @@ class DictMemoryStore(AbstractStore):
         
         """
         return self._store[key][0]
-        
+
     def from_bytes(self, key, data, buffer_size=1048576):
         """ Efficiently read data from a bytes object into a key in the key-value store.
         

@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Storage Events
 ==============
@@ -14,7 +13,7 @@ Storage API.
 """
 
 from encore.events.api import (BaseEvent, ProgressEvent, ProgressStartEvent,
-    ProgressStepEvent, ProgressEndEvent)
+                               ProgressStepEvent, ProgressEndEvent)
 
 
 class StoreEvent(BaseEvent):
@@ -27,14 +26,18 @@ class StoreEvent(BaseEvent):
     
     """
 
+
 class StoreTransactionEvent(StoreEvent):
     pass
+
 
 class StoreTransactionStartEvent(StoreTransactionEvent):
     pass
 
+
 class StoreTransactionEndEvent(StoreTransactionEvent):
     pass
+
 
 class StoreKeyEvent(StoreEvent):
     """ An abstract base class for events related to a particular key in the
@@ -82,7 +85,7 @@ class StoreSetEvent(StoreModificationEvent):
     """
     action = 'set'
 
-        
+
 class StoreUpdateEvent(StoreModificationEvent):
     """ An event generated when a value is updated into a Key-Value Store
     
@@ -98,7 +101,7 @@ class StoreUpdateEvent(StoreModificationEvent):
     """
     action = 'update'
 
-        
+
 class StoreDeleteEvent(StoreModificationEvent):
     """ An event generated when a value is deleted into a Key-Value Store
     
@@ -130,8 +133,8 @@ class StoreProgressEvent(ProgressEvent, StoreKeyEvent):
         The metadata of the key which is involved in the event.
 
     """
-    
-    
+
+
 class StoreProgressStartEvent(ProgressStartEvent, StoreProgressEvent):
     """
     
@@ -150,6 +153,7 @@ class StoreProgressStartEvent(ProgressStartEvent, StoreProgressEvent):
         
     """
 
+
 class StoreProgressStepEvent(ProgressStepEvent, StoreProgressEvent):
     """
     
@@ -167,6 +171,7 @@ class StoreProgressStepEvent(ProgressStepEvent, StoreProgressEvent):
         The count of the step.  If unknown, use -1.
         
     """
+
 
 class StoreProgressEndEvent(ProgressEndEvent, StoreProgressEvent):
     """

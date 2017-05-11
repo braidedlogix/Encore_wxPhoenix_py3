@@ -20,8 +20,8 @@ from ..sqlite_store import SqliteStore
 if six.PY3:
     buffer = sqlite3.Binary
 
-class SqliteStoreReadTest(TestCase, StoreReadTestMixin):
 
+class SqliteStoreReadTest(TestCase, StoreReadTestMixin):
     def setUp(self):
         """ Set up a data store for the test case
 
@@ -56,24 +56,27 @@ class SqliteStoreReadTest(TestCase, StoreReadTestMixin):
             """)
 
         t = time.time()
-        connection.execute("""insert into store values (?, ?, ?, ?, ?)""", (
-            'test1',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t,
-            buffer(b'test2\n')))
+        connection.execute("""insert into store values (?, ?, ?, ?, ?)""",
+                           ('test1', {
+                               'a_str': 'test3',
+                               'an_int': 1,
+                               'a_float': 2.0,
+                               'a_bool': True,
+                               'a_list': ['one', 'two', 'three'],
+                               'a_dict': {
+                                   'one': 1,
+                                   'two': 2,
+                                   'three': 3
+                               }
+                           }, t, t, buffer(b'test2\n')))
         for i in range(10):
             key = 'key%d' % i
             data = buffer(b'value%d' % i)
             metadata = {'query_test1': 'value', 'query_test2': i}
             if i % 2 == 0:
                 metadata['optional'] = True
-            connection.execute("""insert into store values (?, ?, ?, ?, ?)""", (key, metadata, t, t, data))
+            connection.execute("""insert into store values (?, ?, ?, ?, ?)""",
+                               (key, metadata, t, t, data))
         connection.commit()
         connection.close()
 
@@ -88,7 +91,6 @@ class SqliteStoreReadTest(TestCase, StoreReadTestMixin):
 
 
 class SqliteStoreWriteTest(TestCase, StoreWriteTestMixin):
-
     def setUp(self):
         """ Set up a data store for the test case
 
@@ -121,22 +123,25 @@ class SqliteStoreWriteTest(TestCase, StoreWriteTestMixin):
             """)
 
         t = time.time()
-        connection.execute("""insert into store values (?, ?, ?, ?, ?)""", (
-            'test1',
-            {
-                'a_str': 'test3',
-                'an_int': 1,
-                'a_float': 2.0,
-                'a_bool': True,
-                'a_list': ['one', 'two', 'three'],
-                'a_dict': {'one': 1, 'two': 2, 'three': 3}
-            }, t, t,
-            buffer(b'test2\n')))
+        connection.execute("""insert into store values (?, ?, ?, ?, ?)""",
+                           ('test1', {
+                               'a_str': 'test3',
+                               'an_int': 1,
+                               'a_float': 2.0,
+                               'a_bool': True,
+                               'a_list': ['one', 'two', 'three'],
+                               'a_dict': {
+                                   'one': 1,
+                                   'two': 2,
+                                   'three': 3
+                               }
+                           }, t, t, buffer(b'test2\n')))
         for i in range(10):
-            key = 'existing_key%d'%i
+            key = 'existing_key%d' % i
             data = buffer(b'existing_value%d' % i)
             metadata = {'meta': True, 'meta1': -i}
-            connection.execute("""insert into store values (?, ?, ?, ?, ?)""", (key, metadata, t, t, data))
+            connection.execute("""insert into store values (?, ?, ?, ?, ?)""",
+                               (key, metadata, t, t, data))
         connection.commit()
         connection.close()
 

@@ -27,6 +27,7 @@ class TestHandler(logging.Handler):
     Simple logging handler that just accumulates and stores records.
 
     """
+
     def __init__(self):
         logging.Handler.__init__(self)
         self.records = []
@@ -59,15 +60,12 @@ class _TestException(Exception):
 
 
 class TestSerializer(unittest.TestCase):
-
     def setUp(self):
         self.executor = EnhancedThreadPoolExecutor(
-            name='TestSerializerExecutor',
-            max_workers=1)
+            name='TestSerializerExecutor', max_workers=1)
         self.serializer = Serializer(
             name='TestSerializer',
-            executor=self.executor,
-        )
+            executor=self.executor, )
 
     def test_events_serialized(self):
         numbers = []
@@ -96,8 +94,7 @@ class TestSerializer(unittest.TestCase):
         serializer = Serializer(
             name='TestCallbackSerializer',
             executor=self.executor,
-            callback=_callback
-        )
+            callback=_callback)
 
         numbers = []
         serializer.submit(_worker, numbers, 1)
@@ -120,9 +117,7 @@ class TestSerializer(unittest.TestCase):
     def test_serializer_name(self):
         serializer = Serializer(executor=self.executor, name="Will")
         self.assertEqual(serializer.name, "Will")
-        self.assertEqual(
-            serializer._executor.name,
-            'TestSerializerExecutor')
+        self.assertEqual(serializer._executor.name, 'TestSerializerExecutor')
 
     def test_submit_after_shutdown(self):
         self.serializer.shutdown()
@@ -163,8 +158,7 @@ class TestSerializer(unittest.TestCase):
         serializer = Serializer(
             name='TestCallbackExceptionSerializer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a bad job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'
@@ -196,8 +190,7 @@ class TestSerializer(unittest.TestCase):
         serializer = Serializer(
             name='TestCallbackExceptionSerializer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a good job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'

@@ -14,8 +14,8 @@ the mount point.  This is similar in concept to mounting filesystems.
 
 """
 
-
 from .abstract_store import AbstractStore
+
 
 class MountedStore(AbstractStore):
     """ A key-value store that mounts another store at a particular key prefix
@@ -48,7 +48,6 @@ class MountedStore(AbstractStore):
             self.mount_store.delete(short_key)
             return
         raise KeyError(key)
-
 
     # `AbstractStore` Interface
 
@@ -89,7 +88,6 @@ class MountedStore(AbstractStore):
         self._connected = False
         self.stores = []
 
-
     def is_connected(self):
         """ Whether or not the store is currently connected
 
@@ -101,7 +99,6 @@ class MountedStore(AbstractStore):
         """
         return self._connected
 
-
     def info(self):
         """ Get information about the key-value store
 
@@ -110,9 +107,7 @@ class MountedStore(AbstractStore):
         metadata : dict
             A dictionary of metadata giving information about the key-value store.
         """
-        return {
-            'readonly': False,
-        }
+        return {'readonly': False, }
 
     ##########################################################################
     # Basic Create/Read/Update/Delete Methods
@@ -189,7 +184,6 @@ class MountedStore(AbstractStore):
         """
         super(MountedStore, self).set(key, value, buffer_size)
 
-
     def delete(self, key):
         """ Delete a key from the repsository.
 
@@ -250,12 +244,12 @@ class MountedStore(AbstractStore):
         """
         if key.startswith(self.mount_point):
             short_key = key[len(self.mount_point):]
-            if not self.mount_store.exists(short_key) and self.backing_store.exists(key):
+            if not self.mount_store.exists(
+                    short_key) and self.backing_store.exists(key):
                 self.mount_store.set(short_key, self.backing_store.get(key))
             return self.mount_store.set_data(short_key, data, buffer_size)
 
         raise KeyError(key)
-
 
     def set_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
@@ -281,12 +275,12 @@ class MountedStore(AbstractStore):
         """
         if key.startswith(self.mount_point):
             short_key = key[len(self.mount_point):]
-            if not self.mount_store.exists(short_key) and self.backing_store.exists(key):
+            if not self.mount_store.exists(
+                    short_key) and self.backing_store.exists(key):
                 self.mount_store.set(short_key, self.backing_store.get(key))
             return self.mount_store.set_metadata(short_key, metadata)
 
         raise KeyError(key)
-
 
     def update_metadata(self, key, metadata):
         """ Set new metadata for a given key in the key-value store.
@@ -312,7 +306,8 @@ class MountedStore(AbstractStore):
         """
         if key.startswith(self.mount_point):
             short_key = key[len(self.mount_point):]
-            if not self.mount_store.exists(short_key) and self.backing_store.exists(key):
+            if not self.mount_store.exists(
+                    short_key) and self.backing_store.exists(key):
                 self.mount_store.set(short_key, self.backing_store.get(key))
             return self.mount_store.update_metadata(short_key, metadata)
 
@@ -382,7 +377,6 @@ class MountedStore(AbstractStore):
     # Querying Methods
     ##########################################################################
 
-
     def query(self, select=None, **kwargs):
         """ Query for keys and metadata matching metadata provided as keyword arguments
 
@@ -410,7 +404,7 @@ class MountedStore(AbstractStore):
         """
         keys = set()
         for key, metadata in self.mount_store.query(select, **kwargs):
-            full_key = self.mount_point+key
+            full_key = self.mount_point + key
             yield full_key, metadata
             keys.add(full_key)
 
@@ -443,7 +437,7 @@ class MountedStore(AbstractStore):
         """
         keys = set()
         for key in self.mount_store.query_keys(**kwargs):
-            full_key = self.mount_point+key
+            full_key = self.mount_point + key
             yield full_key
             keys.add(full_key)
 

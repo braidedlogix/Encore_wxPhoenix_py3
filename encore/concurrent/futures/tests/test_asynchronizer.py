@@ -27,6 +27,7 @@ class TestHandler(logging.Handler):
     Simple logging handler that just accumulates and stores records.
 
     """
+
     def __init__(self):
         logging.Handler.__init__(self)
         self.records = []
@@ -59,15 +60,12 @@ class _TestException(Exception):
 
 
 class TestAsynchronizer(unittest.TestCase):
-
     def setUp(self):
         self.executor = EnhancedThreadPoolExecutor(
-            name='TestAsynchronizerExecutor',
-            max_workers=1)
+            name='TestAsynchronizerExecutor', max_workers=1)
         self.asynchronizer = Asynchronizer(
             name='TestAsynchronizer',
-            executor=self.executor,
-        )
+            executor=self.executor, )
 
     def test_events_collapsed(self):
         numbers = []
@@ -97,8 +95,7 @@ class TestAsynchronizer(unittest.TestCase):
         asynchronizer = Asynchronizer(
             name='TestCallbackAsynchronizer',
             executor=self.executor,
-            callback=_callback
-        )
+            callback=_callback)
 
         numbers = []
         asynchronizer.submit(_worker, numbers, 1)
@@ -123,9 +120,8 @@ class TestAsynchronizer(unittest.TestCase):
     def test_asynchronizer_name(self):
         asynchronizer = Asynchronizer(executor=self.executor, name="Will")
         self.assertEqual(asynchronizer.name, "Will")
-        self.assertEqual(
-            asynchronizer._executor.name,
-            'TestAsynchronizerExecutor')
+        self.assertEqual(asynchronizer._executor.name,
+                         'TestAsynchronizerExecutor')
 
     def test_submit_after_shutdown(self):
         self.asynchronizer.shutdown()
@@ -166,8 +162,7 @@ class TestAsynchronizer(unittest.TestCase):
         asynchronizer = Asynchronizer(
             name='TestCallbackExceptionAsynchronizer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a bad job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'
@@ -199,8 +194,7 @@ class TestAsynchronizer(unittest.TestCase):
         asynchronizer = Asynchronizer(
             name='TestCallbackExceptionAsynchronizer',
             executor=self.executor,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a good job
         logger_name = 'encore.concurrent.futures.abc_work_scheduler'

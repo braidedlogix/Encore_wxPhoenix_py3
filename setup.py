@@ -11,7 +11,7 @@ if sys.version_info.major == 3:
     d = runpy.run_path(encore_init)
 else:
     d = {}
-    execfile(encore_init, d)
+    exec(compile(open(encore_init).read(), encore_init, 'exec'), d)
 
 setup(
     name='encore',
@@ -23,5 +23,4 @@ setup(
     description='Low-level core modules for building Python applications',
     long_description=open('README.rst').read(),
     packages=find_packages(),
-    requires=[],
-)
+    requires=[], )

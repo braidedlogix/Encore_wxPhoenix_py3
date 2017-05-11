@@ -18,10 +18,12 @@ if sys.platform == 'win32':
 else:
     accurate_time = time.time
 
+
 class HeartbeatEvent(BaseEvent):
     """ Event which is emitted periodically
     """
     pass
+
 
 class Heartbeat(object):
     """ Service which emits an event periodically
@@ -35,24 +37,28 @@ class Heartbeat(object):
     be used for applications which require precise timing.
     
     """
-    
-    def __init__(self, interval=1/50., event_manager=None):
+
+    def __init__(self, interval=1 / 50., event_manager=None):
         self.state = 'waiting'
         self.interval = interval
         self.frame_count = 0
-        self.event_manager = (event_manager if event_manager is not None
-            else get_event_manager())
-    
+        self.event_manager = (event_manager if event_manager is not None else
+                              get_event_manager())
+
     def run(self):
         self.state = 'running'
         while self.state in ['running', 'paused']:
             if self.state == 'running':
                 t = accurate_time()
-                self.event_manager.emit(HeartbeatEvent(source=self, time=t,
-                    frame=self.frame_count, interval=self.interval))
+                self.event_manager.emit(
+                    HeartbeatEvent(
+                        source=self,
+                        time=t,
+                        frame=self.frame_count,
+                        interval=self.interval))
                 self.frame_count += 1
                 # try to ensure regular heartbeat, but always sleep for at least 1ms
-                wait = max(t+self.interval-accurate_time(), 0.001)
+                wait = max(t + self.interval - accurate_time(), 0.001)
             else:
                 wait = self.interval
             time.sleep(wait)
@@ -62,5 +68,3 @@ class Heartbeat(object):
         thread = threading.Thread(target=self.run)
         thread.daemon = True
         thread.start()
-    
-

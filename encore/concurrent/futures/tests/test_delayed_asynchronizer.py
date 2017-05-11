@@ -27,6 +27,7 @@ class TestHandler(logging.Handler):
     Simple logging handler that just accumulates and stores records.
 
     """
+
     def __init__(self):
         logging.Handler.__init__(self)
         self.records = []
@@ -59,16 +60,13 @@ class _TestException(Exception):
 
 
 class TestAsynchronizer(unittest.TestCase):
-
     def setUp(self):
         self.executor = EnhancedThreadPoolExecutor(
-            name='TestAsynchronizerExecutor',
-            max_workers=1)
+            name='TestAsynchronizerExecutor', max_workers=1)
         self.asynchronizer = DelayedAsynchronizer(
             name='TestAsynchronizer',
             executor=self.executor,
-            interval=0.5,
-        )
+            interval=0.5, )
 
     def tearDown(self):
         self.asynchronizer.shutdown()
@@ -95,8 +93,10 @@ class TestAsynchronizer(unittest.TestCase):
 
     def test_events_delayed(self):
         times = []
+
         def _worker(_list):
             _list.append(time.time())
+
         self.asynchronizer.submit(_worker, times)
         self.asynchronizer.submit(_worker, times)
         self.asynchronizer.submit(_worker, times)
@@ -116,8 +116,9 @@ class TestAsynchronizer(unittest.TestCase):
         self.asynchronizer.submit(_worker, times)
         self.asynchronizer.wait()
         self.assertEqual(len(times), 6)
-        differences = [second - first
-                       for first, second in zip(times[:-1], times[1:])]
+        differences = [
+            second - first for first, second in zip(times[:-1], times[1:])
+        ]
         for difference in differences:
             self.assertGreaterEqual(difference, 0.5)
 
@@ -133,8 +134,7 @@ class TestAsynchronizer(unittest.TestCase):
             name='TestCallbackAsynchronizer',
             executor=self.executor,
             interval=0.25,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         numbers = []
         asynchronizer.submit(_worker, numbers, 1)
@@ -160,12 +160,10 @@ class TestAsynchronizer(unittest.TestCase):
         asynchronizer = DelayedAsynchronizer(
             executor=self.executor,
             name="Will",
-            interval=0.25,
-        )
+            interval=0.25, )
         self.assertEqual(asynchronizer.name, "Will")
-        self.assertEqual(
-            asynchronizer._executor.name,
-            'TestAsynchronizerExecutor')
+        self.assertEqual(asynchronizer._executor.name,
+                         'TestAsynchronizerExecutor')
 
     def test_submit_after_shutdown(self):
         self.asynchronizer.shutdown()
@@ -207,8 +205,7 @@ class TestAsynchronizer(unittest.TestCase):
             name='TestCallbackExceptionAsynchronizer',
             executor=self.executor,
             interval=0.25,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a bad job
         logger_name = 'encore.concurrent.futures.delayed_asynchronizer'
@@ -241,8 +238,7 @@ class TestAsynchronizer(unittest.TestCase):
             name='TestCallbackExceptionAsynchronizer',
             executor=self.executor,
             interval=0.25,
-            callback=_callback,
-        )
+            callback=_callback, )
 
         # Submit a good job
         logger_name = 'encore.concurrent.futures.delayed_asynchronizer'

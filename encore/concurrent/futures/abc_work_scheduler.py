@@ -12,7 +12,7 @@ import threading
 logger = logging.getLogger(__name__)
 
 
-class ABCWorkScheduler(object):
+class ABCWorkScheduler(object, metaclass=abc.ABCMeta):
     """ An abstract class to implement various job scheduling and execution
     models using executors.
 
@@ -21,7 +21,6 @@ class ABCWorkScheduler(object):
         This is an experimental API and is subject to change.
 
     """
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def __init__(self, executor, name=None, callback=None):
@@ -125,12 +124,9 @@ class ABCWorkScheduler(object):
             future.result()
         except Exception as e:
             exc_type = type(e)
-            logger.exception(
-                "{0} occurred in submitted {1} job.".format(
-                    exc_type.__name__,
-                    self.name,
-                )
-            )
+            logger.exception("{0} occurred in submitted {1} job.".format(
+                exc_type.__name__,
+                self.name, ))
             logger.error('Actual error:\n{}'.format(future.traceback()))
 
         with self._state_lock:
@@ -150,8 +146,7 @@ class ABCWorkScheduler(object):
         if pending is not None:
             operation, args, kwargs = pending
             self._future = self._executor.submit(operation, *args, **kwargs)
-            self._future.add_done_callback(
-                self._operation_completion_callback)
+            self._future.add_done_callback(self._operation_completion_callback)
 
     @abc.abstractmethod
     def _add_pending_operation(self, operation, args, kwargs):

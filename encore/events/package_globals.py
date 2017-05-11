@@ -9,10 +9,10 @@
 
 """
 
-
 from .event_manager import EventManager
 
 _event_manager = None
+
 
 def get_event_manager():
     """ Get the global event manager. """
@@ -20,6 +20,7 @@ def get_event_manager():
     if _event_manager is None:
         _event_manager = EventManager()
     return _event_manager
+
 
 def set_event_manager(event_manager):
     """ Set the global event manager.

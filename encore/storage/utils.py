@@ -4,7 +4,6 @@
 #
 # This file is open source software distributed according to the terms in LICENSE.txt
 #
-
 """
 Utils
 =====
@@ -21,8 +20,8 @@ from six import create_bound_method
 
 from encore.events.api import ProgressManager
 from .events import (StoreTransactionStartEvent, StoreTransactionEndEvent,
-    StoreProgressStartEvent, StoreProgressStepEvent, StoreProgressEndEvent,
-    StoreModificationEvent)
+                     StoreProgressStartEvent, StoreProgressStepEvent,
+                     StoreProgressEndEvent, StoreModificationEvent)
 
 
 def add_context_manager_support(obj):
@@ -48,6 +47,7 @@ def add_context_manager_support(obj):
 
     return obj
 
+
 class StoreProgressManager(ProgressManager):
     """ :py:class:`encore.events.progress_events.ProgressManager` subclass that
     generates :py:class:`encore.storage.events.StoreProgressEvent`
@@ -70,6 +70,7 @@ class DummyTransactionContext(object):
         The store that this transaction context is associated with.
 
     """
+
     def __new__(cls, store):
         if getattr(store, '_transaction', None) is None:
             obj = object.__new__(cls)
@@ -103,6 +104,7 @@ class SimpleTransactionContext(object):
         The store that this transaction context is associated with.
 
     """
+
     def __new__(cls, store):
         if getattr(store, '_transaction', None) is None:
             obj = object.__new__(cls)
@@ -116,10 +118,11 @@ class SimpleTransactionContext(object):
         self._context_depth += 1
         if self._context_depth == 1:
             self.begin()
-            self.store.event_manager.emit(StoreTransactionStartEvent(
-                source=self.store))
+            self.store.event_manager.emit(
+                StoreTransactionStartEvent(source=self.store))
             # grab Set & veto events for later emission
-            self.store.event_manager.connect(StoreModificationEvent, self._handle_event,
+            self.store.event_manager.connect(
+                StoreModificationEvent, self._handle_event,
                 {'source': self.store}, sys.maxsize)
 
     def _handle_event(self, event):
@@ -136,14 +139,16 @@ class SimpleTransactionContext(object):
                 self.rollback()
                 state = 'failed'
 
-            self.store.event_manager.emit(StoreTransactionEndEvent(
-                source=self.store, state=state))
-            self.store.event_manager.disconnect(StoreModificationEvent, self._handle_event)
+            self.store.event_manager.emit(
+                StoreTransactionEndEvent(
+                    source=self.store, state=state))
+            self.store.event_manager.disconnect(StoreModificationEvent,
+                                                self._handle_event)
             self.store._transaction = None
 
             if exc_value is None:
                 for event in self._events:
-                    event._handled = False # Yikes!
+                    event._handled = False  # Yikes!
                     self.store.event_manager.emit(event)
         return False
 
@@ -216,7 +221,10 @@ class BufferIteratorIO(object):
         self.close()
 
 
-def buffer_iterator(filelike, buffer_size=1048576, progress=None, max_bytes=None):
+def buffer_iterator(filelike,
+                    buffer_size=1048576,
+                    progress=None,
+                    max_bytes=None):
     """ Return an iterator of byte buffers
 
     The buffers of bytes default to the provided buffer_size.  This is a useful
@@ -276,6 +284,7 @@ class hashing_file(object):
     """ File-like wrapper which produces a hash as it is read
 
     """
+
     def __init__(self, filelike, hash):
         self.filelike = filelike
         self.hash = hash

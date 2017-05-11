@@ -11,8 +11,8 @@ import time
 from .abstract_store import Value, AuthorizationError
 from .utils import add_context_manager_support
 
-class StringValue(Value):
 
+class StringValue(Value):
     def __init__(self, data=b'', metadata=None, created=None, modified=None):
         self._data = data
         self._data_stream = None
